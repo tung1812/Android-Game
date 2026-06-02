@@ -34,6 +34,12 @@ public class Player {
     private float animationTime;
     private boolean attacking;
 
+    private int maxHealth;
+    private int health;
+
+    private float damageCooldown;
+    private float damageTimer;
+
     public Player(float startX, float startY) {
         x = startX;
         y = startY;
@@ -46,6 +52,12 @@ public class Player {
         attacking = false;
         playerState = PlayerState.IDLE;
 
+        maxHealth = 5;
+        health = maxHealth;
+
+        damageCooldown = 1.0f;
+        damageTimer = 0f;
+
         loadAnimations();
     }
 
@@ -55,11 +67,7 @@ public class Player {
         attackSheet = new Texture("ReikoAnimations/attack.png");
 
         idleAnimation = createOneFrameAnimation(idleSheet, 0.18f);
-
-        // run.png: 5 columns, 2 rows, but only 6 real frames.
         runAnimation = createGridAnimation(runSheet, 5, 2, 6, 0.12f);
-
-        // attack.png: 5 columns, 2 rows, but only 7 real frames.
         attackAnimation = createGridAnimation(attackSheet, 5, 2, 7, 0.10f);
 
         idleAnimation.setPlayMode(Animation.PlayMode.LOOP);
@@ -94,15 +102,14 @@ public class Player {
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
                 if (addedFrames < frameCount) {
-                    TextureRegion frame = new TextureRegion(
+                    frames.add(new TextureRegion(
                         sheet,
                         col * frameWidth,
                         row * frameHeight,
                         frameWidth,
                         frameHeight
-                    );
+                    ));
 
-                    frames.add(frame);
                     addedFrames++;
                 }
             }
@@ -127,6 +134,10 @@ public class Player {
     ) {
         animationTime += deltaTime;
 
+        if (damageTimer > 0) {
+            damageTimer -= deltaTime;
+        }
+
         boolean moving = false;
 
         if (touching) {
@@ -134,6 +145,7 @@ public class Player {
                 attacking = true;
                 animationTime = 0f;
                 playerState = PlayerState.ATTACK;
+
             }
 
             if (!attacking) {
@@ -175,10 +187,10 @@ public class Player {
     }
 
     public void draw(SpriteBatch batch) {
-        TextureRegion currentFrame = getCurrentFrame();
+        TextureRegion frame = getCurrentFrame();
 
         batch.draw(
-            currentFrame,
+            frame,
             x - width / 2f,
             y - height * 0.15f,
             width,
@@ -196,6 +208,26 @@ public class Player {
         }
 
         return idleAnimation.getKeyFrame(animationTime, true);
+    }
+
+    public void heal(int amount) {
+        health += amount;
+
+        if (health > maxHealth) {
+            health = maxHealth;
+        }
+    }
+
+    public boolean isDead() {
+        return health <= 0;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
     }
 
     public float getX() {

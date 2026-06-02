@@ -37,6 +37,7 @@ public class Main extends ApplicationAdapter {
     Texture quitButtonTexture;
     Texture menuButtonTexture;
     Texture darkBoxTexture;
+    Texture heartFullTexture;
 
     Rectangle startButton;
     Rectangle optionButton;
@@ -76,6 +77,8 @@ public class Main extends ApplicationAdapter {
         creditButtonTexture = new Texture("Menu/credit.png");
         quitButtonTexture = new Texture("Menu/quit.png");
         menuButtonTexture = new Texture("icon/home button.png");
+
+        heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
 
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(0, 0, 0, 0.78f);
@@ -409,12 +412,37 @@ public class Main extends ApplicationAdapter {
 
         batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
+        drawHealthBar();
         drawControlButtons();
 
         drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
         drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
 
         batch.end();
+    }
+
+    private void drawHealthBar() {
+        if (player == null) {
+            return;
+        }
+
+        float heartSize = screenHeight * 0.065f;
+        float gap = screenHeight * 0.010f;
+
+        float startX = menuButton.x + menuButton.width + screenWidth * 0.03f;
+        float startY = screenHeight * 0.855f;
+
+        for (int i = 0; i < player.getHealth(); i++) {
+            float heartX = startX + i * (heartSize + gap);
+
+            batch.draw(
+                heartFullTexture,
+                heartX,
+                startY,
+                heartSize,
+                heartSize
+            );
+        }
     }
 
     private void drawControlButtons() {
@@ -488,6 +516,7 @@ public class Main extends ApplicationAdapter {
         quitButtonTexture.dispose();
         menuButtonTexture.dispose();
         darkBoxTexture.dispose();
+        heartFullTexture.dispose();
 
         titleFont.dispose();
         smallFont.dispose();
