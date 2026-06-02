@@ -48,8 +48,7 @@ public class Main extends ApplicationAdapter {
     Rectangle downButton;
     Rectangle leftButton;
     Rectangle rightButton;
-    Rectangle zoomInButton;
-    Rectangle zoomOutButton;
+    Rectangle attackButton;
 
     BitmapFont titleFont;
     BitmapFont smallFont;
@@ -63,8 +62,7 @@ public class Main extends ApplicationAdapter {
     OrthographicCamera mapCamera;
     OrthographicCamera uiCamera;
 
-    float cameraSpeed = 300f;
-    float zoomSpeed = 0.8f;
+    Player player;
 
     @Override
     public void create() {
@@ -153,18 +151,11 @@ public class Main extends ApplicationAdapter {
             controlSize
         );
 
-        zoomInButton = new Rectangle(
-            screenWidth * 0.84f,
-            screenHeight * 0.24f,
-            controlSize,
-            controlSize
-        );
-
-        zoomOutButton = new Rectangle(
+        attackButton = new Rectangle(
             screenWidth * 0.84f,
             screenHeight * 0.10f,
-            controlSize,
-            controlSize
+            screenHeight * 0.13f,
+            screenHeight * 0.13f
         );
     }
 
@@ -196,7 +187,9 @@ public class Main extends ApplicationAdapter {
             float centerX = 0;
             float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
 
-            mapCamera.position.set(centerX, centerY, 0);
+            player = new Player(centerX, centerY);
+
+            mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.zoom = 1.0f;
             mapCamera.update();
 
@@ -206,6 +199,7 @@ public class Main extends ApplicationAdapter {
 
             tiledMap = null;
             mapRenderer = null;
+            player = null;
             gameState = GameState.PLAYING;
         }
     }
@@ -279,50 +273,37 @@ public class Main extends ApplicationAdapter {
     private void updateGame() {
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        if (Gdx.input.isTouched()) {
-            float touchX = Gdx.input.getX();
-            float touchY = screenHeight - Gdx.input.getY();
+        boolean touching = Gdx.input.isTouched();
+        float touchX = 0;
+        float touchY = 0;
+
+        if (touching) {
+            touchX = Gdx.input.getX();
+            touchY = screenHeight - Gdx.input.getY();
 
             if (menuButton.contains(touchX, touchY)) {
                 gameState = GameState.MENU;
                 return;
             }
+        }
 
-            if (mapCamera != null) {
-                if (leftButton.contains(touchX, touchY)) {
-                    mapCamera.position.x -= cameraSpeed * deltaTime;
-                }
+        if (player != null) {
+            player.update(
+                deltaTime,
+                leftButton,
+                rightButton,
+                upButton,
+                downButton,
+                attackButton,
+                touchX,
+                touchY,
+                touching
+            );
+        }
 
-                if (rightButton.contains(touchX, touchY)) {
-                    mapCamera.position.x += cameraSpeed * deltaTime;
-                }
-
-                if (upButton.contains(touchX, touchY)) {
-                    mapCamera.position.y += cameraSpeed * deltaTime;
-                }
-
-                if (downButton.contains(touchX, touchY)) {
-                    mapCamera.position.y -= cameraSpeed * deltaTime;
-                }
-
-                if (zoomInButton.contains(touchX, touchY)) {
-                    mapCamera.zoom -= zoomSpeed * deltaTime;
-                }
-
-                if (zoomOutButton.contains(touchX, touchY)) {
-                    mapCamera.zoom += zoomSpeed * deltaTime;
-                }
-
-                if (mapCamera.zoom < 0.4f) {
-                    mapCamera.zoom = 0.4f;
-                }
-
-                if (mapCamera.zoom > 2.5f) {
-                    mapCamera.zoom = 2.5f;
-                }
-
-                mapCamera.update();
-            }
+        if (mapCamera != null && player != null) {
+            mapCamera.position.set(player.getX(), player.getY(), 0);
+            mapCamera.update();
         }
     }
 
@@ -378,8 +359,8 @@ public class Main extends ApplicationAdapter {
         drawBoldTextWithBox(titleFont, "Option", screenHeight * 0.78f, 45, 22);
 
         drawBoldTextWithBox(smallFont, "Use screen buttons to move", screenHeight * 0.60f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Use + and - to zoom", screenHeight * 0.50f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Explore map and defeat the enemies to find the goals.", screenHeight * 0.40f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Tap ATK to attack", screenHeight * 0.50f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Explore the isometric level", screenHeight * 0.40f, 35, 18);
         drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.30f, 35, 18);
     }
 
@@ -414,6 +395,15 @@ public class Main extends ApplicationAdapter {
         mapRenderer.setView(mapCamera);
         mapRenderer.render();
 
+        batch.setProjectionMatrix(mapCamera.combined);
+        batch.begin();
+
+        if (player != null) {
+            player.draw(batch);
+        }
+
+        batch.end();
+
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
 
@@ -422,7 +412,7 @@ public class Main extends ApplicationAdapter {
         drawControlButtons();
 
         drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Use screen buttons to move", screenHeight * 0.08f, 30, 14);
+        drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
 
         batch.end();
     }
@@ -433,8 +423,7 @@ public class Main extends ApplicationAdapter {
         drawButtonBox(leftButton, "<");
         drawButtonBox(rightButton, ">");
 
-        drawButtonBox(zoomInButton, "+");
-        drawButtonBox(zoomOutButton, "-");
+        drawButtonBox(attackButton, "ATK");
     }
 
     private void drawButtonBox(Rectangle button, String text) {
@@ -502,6 +491,10 @@ public class Main extends ApplicationAdapter {
 
         titleFont.dispose();
         smallFont.dispose();
+
+        if (player != null) {
+            player.dispose();
+        }
 
         if (tiledMap != null) {
             tiledMap.dispose();
