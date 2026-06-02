@@ -3,14 +3,18 @@ package com.AS.assignment1;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.maps.MapProperties;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Main extends ApplicationAdapter {
@@ -40,6 +44,13 @@ public class Main extends ApplicationAdapter {
     Rectangle quitButton;
     Rectangle menuButton;
 
+    Rectangle upButton;
+    Rectangle downButton;
+    Rectangle leftButton;
+    Rectangle rightButton;
+    Rectangle zoomInButton;
+    Rectangle zoomOutButton;
+
     BitmapFont titleFont;
     BitmapFont smallFont;
     GlyphLayout layout;
@@ -47,10 +58,17 @@ public class Main extends ApplicationAdapter {
     float screenWidth;
     float screenHeight;
 
+    TiledMap tiledMap;
+    IsometricTiledMapRenderer mapRenderer;
+    OrthographicCamera mapCamera;
+    OrthographicCamera uiCamera;
+
+    float cameraSpeed = 300f;
+    float zoomSpeed = 0.8f;
+
     @Override
     public void create() {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
-        Gdx.input.setCatchKey(Input.Keys.BACK, true);
 
         batch = new SpriteBatch();
 
@@ -80,9 +98,14 @@ public class Main extends ApplicationAdapter {
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
 
+        setupButtons();
+        setupCameras();
+    }
+
+    private void setupButtons() {
         float buttonWidth = screenWidth * 0.28f;
         float buttonHeight = screenHeight * 0.11f;
-        float buttonX = (screenWidth - buttonWidth) / 2;
+        float buttonX = (screenWidth - buttonWidth) / 2f;
 
         startButton = new Rectangle(buttonX, screenHeight * 0.58f, buttonWidth, buttonHeight);
         optionButton = new Rectangle(buttonX, screenHeight * 0.44f, buttonWidth, buttonHeight);
@@ -95,6 +118,96 @@ public class Main extends ApplicationAdapter {
             screenHeight * 0.12f,
             screenHeight * 0.12f
         );
+
+        float controlSize = screenHeight * 0.10f;
+        float gap = screenHeight * 0.02f;
+
+        float controlX = screenWidth * 0.06f;
+        float controlY = screenHeight * 0.08f;
+
+        leftButton = new Rectangle(
+            controlX,
+            controlY + controlSize + gap,
+            controlSize,
+            controlSize
+        );
+
+        rightButton = new Rectangle(
+            controlX + controlSize * 2f + gap * 2f,
+            controlY + controlSize + gap,
+            controlSize,
+            controlSize
+        );
+
+        upButton = new Rectangle(
+            controlX + controlSize + gap,
+            controlY + controlSize * 2f + gap * 2f,
+            controlSize,
+            controlSize
+        );
+
+        downButton = new Rectangle(
+            controlX + controlSize + gap,
+            controlY,
+            controlSize,
+            controlSize
+        );
+
+        zoomInButton = new Rectangle(
+            screenWidth * 0.84f,
+            screenHeight * 0.24f,
+            controlSize,
+            controlSize
+        );
+
+        zoomOutButton = new Rectangle(
+            screenWidth * 0.84f,
+            screenHeight * 0.10f,
+            controlSize,
+            controlSize
+        );
+    }
+
+    private void setupCameras() {
+        uiCamera = new OrthographicCamera();
+        uiCamera.setToOrtho(false, screenWidth, screenHeight);
+        uiCamera.update();
+
+        mapCamera = new OrthographicCamera();
+        mapCamera.setToOrtho(false, screenWidth, screenHeight);
+        mapCamera.update();
+    }
+
+    private void loadMapIfNeeded() {
+        if (tiledMap != null && mapRenderer != null) {
+            return;
+        }
+
+        try {
+            tiledMap = new TmxMapLoader().load("maps/level1.tmx");
+            mapRenderer = new IsometricTiledMapRenderer(tiledMap);
+
+            MapProperties properties = tiledMap.getProperties();
+
+            int mapWidth = properties.get("width", Integer.class);
+            int mapHeight = properties.get("height", Integer.class);
+            int tileHeight = properties.get("tileheight", Integer.class);
+
+            float centerX = 0;
+            float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
+
+            mapCamera.position.set(centerX, centerY, 0);
+            mapCamera.zoom = 1.0f;
+            mapCamera.update();
+
+            Gdx.app.log("MAP", "Map loaded successfully");
+        } catch (Exception e) {
+            Gdx.app.error("MAP", "Failed to load map", e);
+
+            tiledMap = null;
+            mapRenderer = null;
+            gameState = GameState.PLAYING;
+        }
     }
 
     private void update() {
@@ -123,6 +236,7 @@ public class Main extends ApplicationAdapter {
             float touchY = screenHeight - Gdx.input.getY();
 
             if (startButton.contains(touchX, touchY)) {
+                loadMapIfNeeded();
                 gameState = GameState.PLAYING;
             }
 
@@ -138,23 +252,6 @@ public class Main extends ApplicationAdapter {
                 Gdx.app.exit();
             }
         }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            gameState = GameState.PLAYING;
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
-            gameState = GameState.HELP;
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
-            gameState = GameState.CREDIT;
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
-            Gdx.app.exit();
-        }
     }
 
     private void updateHelp() {
@@ -165,11 +262,6 @@ public class Main extends ApplicationAdapter {
             if (menuButton.contains(touchX, touchY)) {
                 gameState = GameState.MENU;
             }
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
-            gameState = GameState.MENU;
         }
     }
 
@@ -182,26 +274,55 @@ public class Main extends ApplicationAdapter {
                 gameState = GameState.MENU;
             }
         }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
-            gameState = GameState.MENU;
-        }
     }
 
     private void updateGame() {
-        if (Gdx.input.justTouched()) {
+        float deltaTime = Gdx.graphics.getDeltaTime();
+
+        if (Gdx.input.isTouched()) {
             float touchX = Gdx.input.getX();
             float touchY = screenHeight - Gdx.input.getY();
 
             if (menuButton.contains(touchX, touchY)) {
                 gameState = GameState.MENU;
+                return;
             }
-        }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
-            gameState = GameState.MENU;
+            if (mapCamera != null) {
+                if (leftButton.contains(touchX, touchY)) {
+                    mapCamera.position.x -= cameraSpeed * deltaTime;
+                }
+
+                if (rightButton.contains(touchX, touchY)) {
+                    mapCamera.position.x += cameraSpeed * deltaTime;
+                }
+
+                if (upButton.contains(touchX, touchY)) {
+                    mapCamera.position.y += cameraSpeed * deltaTime;
+                }
+
+                if (downButton.contains(touchX, touchY)) {
+                    mapCamera.position.y -= cameraSpeed * deltaTime;
+                }
+
+                if (zoomInButton.contains(touchX, touchY)) {
+                    mapCamera.zoom -= zoomSpeed * deltaTime;
+                }
+
+                if (zoomOutButton.contains(touchX, touchY)) {
+                    mapCamera.zoom += zoomSpeed * deltaTime;
+                }
+
+                if (mapCamera.zoom < 0.4f) {
+                    mapCamera.zoom = 0.4f;
+                }
+
+                if (mapCamera.zoom > 2.5f) {
+                    mapCamera.zoom = 2.5f;
+                }
+
+                mapCamera.update();
+            }
         }
     }
 
@@ -212,6 +333,12 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glClearColor(0.10f, 0.15f, 0.20f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        if (gameState == GameState.PLAYING) {
+            drawGame();
+            return;
+        }
+
+        batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
 
         batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
@@ -225,12 +352,11 @@ public class Main extends ApplicationAdapter {
                 drawHelp();
                 break;
 
-            case PLAYING:
-                drawGame();
-                break;
-
             case CREDIT:
                 drawCredit();
+                break;
+
+            default:
                 break;
         }
 
@@ -251,10 +377,10 @@ public class Main extends ApplicationAdapter {
 
         drawBoldTextWithBox(titleFont, "Option", screenHeight * 0.78f, 45, 22);
 
-        drawBoldTextWithBox(smallFont, "Touch buttons to control the player", screenHeight * 0.60f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Attack enemies and reach the goal", screenHeight * 0.50f, 35, 18);
-        drawBoldTextWithBox(smallFont, "If your HP reaches 0, the player dies", screenHeight * 0.40f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Tap the home button to go back", screenHeight * 0.30f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Use screen buttons to move", screenHeight * 0.60f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Use + and - to zoom", screenHeight * 0.50f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Explore map and defeat the enemies to find the goals.", screenHeight * 0.40f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.30f, 35, 18);
     }
 
     private void drawCredit() {
@@ -264,24 +390,73 @@ public class Main extends ApplicationAdapter {
 
         drawBoldTextWithBox(smallFont, "Game created by", screenHeight * 0.60f, 35, 18);
         drawBoldTextWithBox(smallFont, "Gia Minh Pham and Son Tung Nguyen", screenHeight * 0.50f, 35, 18);
-        drawBoldTextWithBox(smallFont, "2D RPG Adventure Game", screenHeight * 0.40f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Tap the home button to go back", screenHeight * 0.30f, 35, 18);
+        drawBoldTextWithBox(smallFont, "2D Isometric RPG Adventure Game", screenHeight * 0.40f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.30f, 35, 18);
     }
 
     private void drawGame() {
+        if (tiledMap == null || mapRenderer == null) {
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+
+            batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+            batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
+
+            drawBoldTextWithBox(titleFont, "Map Error", screenHeight * 0.70f, 45, 22);
+            drawBoldTextWithBox(smallFont, "Cannot load maps/level1.tmx", screenHeight * 0.55f, 35, 18);
+            drawBoldTextWithBox(smallFont, "Check level1.tmx, tileset.tsx, and spritesheet.png", screenHeight * 0.45f, 35, 18);
+            drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.35f, 35, 18);
+
+            batch.end();
+            return;
+        }
+
+        mapRenderer.setView(mapCamera);
+        mapRenderer.render();
+
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+
         batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
-        drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.70f, 45, 22);
+        drawControlButtons();
+
+        drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
+        drawBoldTextWithBox(smallFont, "Use screen buttons to move", screenHeight * 0.08f, 30, 14);
+
+        batch.end();
+    }
+
+    private void drawControlButtons() {
+        drawButtonBox(upButton, "^");
+        drawButtonBox(downButton, "v");
+        drawButtonBox(leftButton, "<");
+        drawButtonBox(rightButton, ">");
+
+        drawButtonBox(zoomInButton, "+");
+        drawButtonBox(zoomOutButton, "-");
+    }
+
+    private void drawButtonBox(Rectangle button, String text) {
+        batch.draw(darkBoxTexture, button.x, button.y, button.width, button.height);
+
+        layout.setText(smallFont, text);
+
+        float textX = button.x + (button.width - layout.width) / 2f;
+        float textY = button.y + (button.height + layout.height) / 2f;
+
+        smallFont.setColor(Color.WHITE);
+        smallFont.draw(batch, text, textX, textY);
     }
 
     private void drawBoldTextWithBox(BitmapFont font, String text, float y, float paddingX, float paddingY) {
         layout.setText(font, text);
 
-        float textX = (screenWidth - layout.width) / 2;
+        float textX = (screenWidth - layout.width) / 2f;
         float boxX = textX - paddingX;
         float boxY = y - layout.height - paddingY;
-        float boxWidth = layout.width + paddingX * 2;
-        float boxHeight = layout.height + paddingY * 2;
+        float boxWidth = layout.width + paddingX * 2f;
+        float boxHeight = layout.height + paddingY * 2f;
 
         batch.draw(darkBoxTexture, boxX, boxY, boxWidth, boxHeight);
 
@@ -294,6 +469,23 @@ public class Main extends ApplicationAdapter {
         font.draw(batch, text, textX - 1, y);
         font.draw(batch, text, textX, y + 1);
         font.draw(batch, text, textX, y - 1);
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        screenWidth = width;
+        screenHeight = height;
+
+        setupButtons();
+
+        uiCamera.setToOrtho(false, screenWidth, screenHeight);
+        uiCamera.update();
+
+        if (mapCamera != null) {
+            mapCamera.viewportWidth = screenWidth;
+            mapCamera.viewportHeight = screenHeight;
+            mapCamera.update();
+        }
     }
 
     @Override
@@ -310,5 +502,13 @@ public class Main extends ApplicationAdapter {
 
         titleFont.dispose();
         smallFont.dispose();
+
+        if (tiledMap != null) {
+            tiledMap.dispose();
+        }
+
+        if (mapRenderer != null) {
+            mapRenderer.dispose();
+        }
     }
 }
