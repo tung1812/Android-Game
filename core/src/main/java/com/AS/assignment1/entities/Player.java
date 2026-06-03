@@ -1,4 +1,4 @@
-package com.AS.assignment1;
+package com.AS.assignment1.entities;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
