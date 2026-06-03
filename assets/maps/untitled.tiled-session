@@ -1,0 +1,22 @@
+{
+    "activeFile": "",
+    "expandedProjectPaths": [
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        ":/automap-tiles.tsx": {
+            "scaleInDock": 1
+        }
+    },
+    "map.height": 30,
+    "map.orientation": "2",
+    "map.renderOrder": "2",
+    "map.tileHeight": 32,
+    "map.tileWidth": 64,
+    "map.width": 30,
+    "openFiles": [
+    ],
+    "project": "untitled.tiled-project",
+    "recentFiles": [
+    ]
+}
