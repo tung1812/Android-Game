@@ -4,22 +4,29 @@ import com.AS.assignment1.Main;
 import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.entities.EnemyManager;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
-
 public class GameScreen extends BaseScreen {
 
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
+
+    private Texture buttonSheetTexture;
+    private Texture attackButtonTexture;
+
+    private TextureRegion upButtonRegion;
+    private TextureRegion downButtonRegion;
+    private TextureRegion leftButtonRegion;
+    private TextureRegion rightButtonRegion;
 
     private Rectangle menuButton;
     private Rectangle upButton;
@@ -45,6 +52,11 @@ public class GameScreen extends BaseScreen {
         backgroundTexture = new Texture("background.jpg");
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
+
+        buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
+        attackButtonTexture = new Texture("Buttons/attack.png");
+        loadButtonRegions();
+
         attackSoundPlayed = false;
 
         setupButtons();
@@ -106,6 +118,15 @@ public class GameScreen extends BaseScreen {
             screenHeight * 0.13f,
             screenHeight * 0.13f
         );
+    }
+
+    private void loadButtonRegions() {
+        TextureRegion[][] buttons = TextureRegion.split(buttonSheetTexture, 16, 16);
+
+        upButtonRegion = buttons[1][6];
+        downButtonRegion = buttons[1][5];
+        leftButtonRegion = buttons[0][5];
+        rightButtonRegion = buttons[0][6];
     }
 
     private void setupMapCamera() {
@@ -244,13 +265,32 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
-        game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
+        game.batch.draw(
+            menuButtonTexture,
+            menuButton.x,
+            menuButton.y,
+            menuButton.width,
+            menuButton.height
+        );
 
         drawHealthBar();
         drawControlButtons();
 
-        drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
+        drawBoldTextWithBox(
+            titleFont,
+            "LEVEL " + game.getLevelManager().getSelectedLevel(),
+            screenHeight * 0.92f,
+            45,
+            22
+        );
+
+        drawBoldTextWithBox(
+            smallFont,
+            "Use buttons to move Reiko",
+            screenHeight * 0.08f,
+            30,
+            14
+        );
 
         game.batch.end();
     }
@@ -263,8 +303,8 @@ public class GameScreen extends BaseScreen {
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
         drawBoldTextWithBox(titleFont, "Map Error", screenHeight * 0.70f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Cannot load maps/level1.tmx", screenHeight * 0.55f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Check level1.tmx, tileset.tsx, and spritesheet.png", screenHeight * 0.45f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Cannot load selected level map", screenHeight * 0.55f, 35, 18);
+        drawBoldTextWithBox(smallFont, "Check maps/level1.tmx, level2.tmx, level3.tmx", screenHeight * 0.45f, 35, 18);
         drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.35f, 35, 18);
 
         game.batch.end();
@@ -295,23 +335,40 @@ public class GameScreen extends BaseScreen {
     }
 
     private void drawControlButtons() {
-        drawButtonBox(upButton, "^");
-        drawButtonBox(downButton, "v");
-        drawButtonBox(leftButton, "<");
-        drawButtonBox(rightButton, ">");
-        drawButtonBox(attackButton, "ATK");
+        drawImageButton(upButton, upButtonRegion);
+        drawImageButton(downButton, downButtonRegion);
+        drawImageButton(leftButton, leftButtonRegion);
+        drawImageButton(rightButton, rightButtonRegion);
+
+        drawTextureButton(attackButton, attackButtonTexture);
     }
 
-    private void drawButtonBox(Rectangle button, String text) {
-        game.batch.draw(darkBoxTexture, button.x, button.y, button.width, button.height);
+    private void drawImageButton(Rectangle button, TextureRegion region) {
+        if (region == null) {
+            return;
+        }
 
-        layout.setText(smallFont, text);
+        game.batch.draw(
+            region,
+            button.x,
+            button.y,
+            button.width,
+            button.height
+        );
+    }
 
-        float textX = button.x + (button.width - layout.width) / 2f;
-        float textY = button.y + (button.height + layout.height) / 2f;
+    private void drawTextureButton(Rectangle button, Texture texture) {
+        if (texture == null) {
+            return;
+        }
 
-        smallFont.setColor(Color.WHITE);
-        smallFont.draw(game.batch, text, textX, textY);
+        game.batch.draw(
+            texture,
+            button.x,
+            button.y,
+            button.width,
+            button.height
+        );
     }
 
     @Override
@@ -334,6 +391,11 @@ public class GameScreen extends BaseScreen {
         backgroundTexture.dispose();
         menuButtonTexture.dispose();
         heartFullTexture.dispose();
+        buttonSheetTexture.dispose();
+
+        if (attackButtonTexture != null) {
+            attackButtonTexture.dispose();
+        }
 
         if (player != null) {
             player.dispose();
