@@ -8,7 +8,7 @@ public class SoundManager {
 
     private Sound clickSound;
     private Sound errorSound;
-
+    private Sound attackSound;
     private Preferences preferences;
     private float masterVolume;
 
@@ -18,6 +18,7 @@ public class SoundManager {
 
         clickSound = loadSound("Sound/UI/sci_fi_select.wav");
         errorSound = loadSound("Sound/UI/sci_fi_error.wav");
+        attackSound = loadSound("Sound/Weapons/sword_slice.wav");
     }
 
     private Sound loadSound(String path) {
@@ -35,6 +36,10 @@ public class SoundManager {
 
     public void playError() {
         play(errorSound);
+    }
+
+    public void playAttack() {
+        play(attackSound);
     }
 
     private void play(Sound sound) {
@@ -85,6 +90,10 @@ public class SoundManager {
 
         if (errorSound != null) {
             errorSound.dispose();
+        }
+
+        if (attackSound != null) {
+            attackSound.dispose();
         }
     }
 }

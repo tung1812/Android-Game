@@ -30,6 +30,7 @@ public class GameScreen extends BaseScreen {
 
     private int startTileCol = 2;
     private int startTileRow = 2;
+    private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
     private IsometricTiledMapRenderer mapRenderer;
@@ -44,6 +45,7 @@ public class GameScreen extends BaseScreen {
         backgroundTexture = new Texture("background.jpg");
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
+        attackSoundPlayed = false;
 
         setupButtons();
         setupMapCamera();
@@ -161,9 +163,21 @@ public class GameScreen extends BaseScreen {
             touchY = screenHeight - Gdx.input.getY();
 
             if (menuButton.contains(touchX, touchY)) {
+                game.getSoundManager().playClick();
                 game.showMenuScreen();
                 return;
             }
+
+            if (attackButton.contains(touchX, touchY)) {
+                if (!attackSoundPlayed) {
+                    game.getSoundManager().playAttack();
+                    attackSoundPlayed = true;
+                }
+            } else {
+                attackSoundPlayed = false;
+            }
+        } else {
+            attackSoundPlayed = false;
         }
 
         if (player != null) {
