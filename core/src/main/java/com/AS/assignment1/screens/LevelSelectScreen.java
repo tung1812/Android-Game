@@ -2,6 +2,7 @@ package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Rectangle;
@@ -10,7 +11,6 @@ public class LevelSelectScreen extends BaseScreen {
 
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
-    private Texture darkButtonTexture;
 
     private Rectangle menuButton;
     private Rectangle level1Button;
@@ -22,8 +22,6 @@ public class LevelSelectScreen extends BaseScreen {
 
         backgroundTexture = new Texture("background.jpg");
         menuButtonTexture = new Texture("icon/home button.png");
-
-        darkButtonTexture = darkBoxTexture;
 
         setupButtons();
     }
@@ -40,26 +38,9 @@ public class LevelSelectScreen extends BaseScreen {
         float buttonHeight = screenHeight * 0.12f;
         float buttonX = (screenWidth - buttonWidth) / 2f;
 
-        level1Button = new Rectangle(
-            buttonX,
-            screenHeight * 0.55f,
-            buttonWidth,
-            buttonHeight
-        );
-
-        level2Button = new Rectangle(
-            buttonX,
-            screenHeight * 0.39f,
-            buttonWidth,
-            buttonHeight
-        );
-
-        level3Button = new Rectangle(
-            buttonX,
-            screenHeight * 0.23f,
-            buttonWidth,
-            buttonHeight
-        );
+        level1Button = new Rectangle(buttonX, screenHeight * 0.55f, buttonWidth, buttonHeight);
+        level2Button = new Rectangle(buttonX, screenHeight * 0.39f, buttonWidth, buttonHeight);
+        level3Button = new Rectangle(buttonX, screenHeight * 0.23f, buttonWidth, buttonHeight);
     }
 
     private void update() {
@@ -76,18 +57,27 @@ public class LevelSelectScreen extends BaseScreen {
         }
 
         if (level1Button.contains(touchX, touchY)) {
-            game.showGameScreen();
+            startLevel(1);
             return;
         }
 
         if (level2Button.contains(touchX, touchY)) {
-            game.showGameScreen();
+            startLevel(2);
             return;
         }
 
         if (level3Button.contains(touchX, touchY)) {
-            game.showGameScreen();
+            startLevel(3);
         }
+    }
+
+    private void startLevel(int level) {
+        if (!game.getLevelManager().isLevelUnlocked(level)) {
+            return;
+        }
+
+        game.getLevelManager().setSelectedLevel(level);
+        game.showGameScreen();
     }
 
     @Override
@@ -105,23 +95,35 @@ public class LevelSelectScreen extends BaseScreen {
 
         drawBoldTextWithBox(titleFont, "Select Level", screenHeight * 0.80f, 45, 22);
 
-        drawLevelButton(level1Button, "LEVEL 1");
-        drawLevelButton(level2Button, "LEVEL 2");
-        drawLevelButton(level3Button, "LEVEL 3");
+        drawLevelButton(level1Button, "LEVEL 1", game.getLevelManager().isLevelUnlocked(1));
+        drawLevelButton(level2Button, "LEVEL 2", game.getLevelManager().isLevelUnlocked(2));
+        drawLevelButton(level3Button, "LEVEL 3", game.getLevelManager().isLevelUnlocked(3));
 
         game.batch.end();
     }
 
-    private void drawLevelButton(Rectangle button, String text) {
-        game.batch.draw(darkButtonTexture, button.x, button.y, button.width, button.height);
+    private void drawLevelButton(Rectangle button, String text, boolean unlocked) {
+        game.batch.draw(darkBoxTexture, button.x, button.y, button.width, button.height);
 
-        layout.setText(smallFont, text);
+        String displayText = text;
+
+        if (!unlocked) {
+            displayText = text + " LOCKED";
+        }
+
+        layout.setText(smallFont, displayText);
 
         float textX = button.x + (button.width - layout.width) / 2f;
         float textY = button.y + (button.height + layout.height) / 2f;
 
-        smallFont.setColor(com.badlogic.gdx.graphics.Color.WHITE);
-        smallFont.draw(game.batch, text, textX, textY);
+        if (unlocked) {
+            smallFont.setColor(Color.WHITE);
+        } else {
+            smallFont.setColor(Color.GRAY);
+        }
+
+        smallFont.draw(game.batch, displayText, textX, textY);
+        smallFont.setColor(Color.WHITE);
     }
 
     @Override

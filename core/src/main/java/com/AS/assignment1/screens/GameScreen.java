@@ -15,6 +15,7 @@ import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 public class GameScreen extends BaseScreen {
+
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
@@ -25,6 +26,9 @@ public class GameScreen extends BaseScreen {
     private Rectangle leftButton;
     private Rectangle rightButton;
     private Rectangle attackButton;
+
+    private int startTileCol = 2;
+    private int startTileRow = 2;
 
     private TiledMap tiledMap;
     private IsometricTiledMapRenderer mapRenderer;
@@ -114,20 +118,20 @@ public class GameScreen extends BaseScreen {
 
             MapProperties properties = tiledMap.getProperties();
 
-            int mapWidth = properties.get("width", Integer.class);
-            int mapHeight = properties.get("height", Integer.class);
+            int tileWidth = properties.get("tilewidth", Integer.class);
             int tileHeight = properties.get("tileheight", Integer.class);
 
-            float centerX = 0;
-            float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
+            float startX = getIsoTileX(startTileCol, startTileRow, tileWidth);
+            float startY = getIsoTileY(startTileCol, startTileRow, tileHeight);
 
-            player = new Player(centerX, centerY);
+            player = new Player(startX, startY);
 
             mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.zoom = 1.0f;
             mapCamera.update();
 
             Gdx.app.log("MAP", "Map loaded successfully");
+            Gdx.app.log("PLAYER", "Spawned at tile: " + startTileCol + ", " + startTileRow);
         } catch (Exception e) {
             Gdx.app.error("MAP", "Failed to load map", e);
 
@@ -135,6 +139,14 @@ public class GameScreen extends BaseScreen {
             mapRenderer = null;
             player = null;
         }
+    }
+
+    private float getIsoTileX(int col, int row, int tileWidth) {
+        return (col - row) * tileWidth / 2f;
+    }
+
+    private float getIsoTileY(int col, int row, int tileHeight) {
+        return (col + row) * tileHeight / 2f;
     }
 
     private void update(float deltaTime) {

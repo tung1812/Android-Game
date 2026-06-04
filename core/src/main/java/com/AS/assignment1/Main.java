@@ -7,10 +7,10 @@ import com.AS.assignment1.screens.HelpScreen;
 import com.AS.assignment1.screens.LevelSelectScreen;
 import com.AS.assignment1.screens.MenuScreen;
 // import com.AS.assignment1.screens.WinScreen;
+import com.AS.assignment1.world.LevelManager;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
@@ -18,19 +18,13 @@ public class Main extends Game {
 
     public SpriteBatch batch;
 
-    private Preferences preferences;
-
-    private int selectedLevel;
-    private int unlockedLevel;
+    private LevelManager levelManager;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
 
-        preferences = Gdx.app.getPreferences("game_save");
-
-        selectedLevel = 1;
-        unlockedLevel = preferences.getInteger("unlockedLevel", 1);
+        levelManager = new LevelManager();
 
         showMenuScreen();
     }
@@ -70,24 +64,8 @@ public class Main extends Game {
         changeScreen(new GameScreen(this));
     }
 
-    public void setSelectedLevel(int level) {
-        selectedLevel = level;
-    }
-
-    public int getSelectedLevel() {
-        return selectedLevel;
-    }
-
-    public int getUnlockedLevel() {
-        return unlockedLevel;
-    }
-
-    public void unlockLevel(int level) {
-        if (level > unlockedLevel) {
-            unlockedLevel = level;
-            preferences.putInteger("unlockedLevel", unlockedLevel);
-            preferences.flush();
-        }
+    public LevelManager getLevelManager() {
+        return levelManager;
     }
 
     // public void showDeathScreen() {
@@ -109,6 +87,8 @@ public class Main extends Game {
             getScreen().dispose();
         }
 
-        batch.dispose();
+        if (batch != null) {
+            batch.dispose();
+        }
     }
 }
