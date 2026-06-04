@@ -13,10 +13,20 @@ public class MenuScreen extends BaseScreen {
     private Texture creditButtonTexture;
     private Texture quitButtonTexture;
 
+    private Texture volumeButtonTexture;
+    private Texture increaseButtonTexture;
+    private Texture decreaseButtonTexture;
+
     private Rectangle startButton;
     private Rectangle optionButton;
     private Rectangle creditButton;
     private Rectangle quitButton;
+
+    private Rectangle volumeButton;
+    private Rectangle increaseButton;
+    private Rectangle decreaseButton;
+
+    private boolean showVolumePanel;
 
     public MenuScreen(Main game) {
         super(game);
@@ -26,6 +36,12 @@ public class MenuScreen extends BaseScreen {
         optionButtonTexture = new Texture("Menu/option.png");
         creditButtonTexture = new Texture("Menu/credit.png");
         quitButtonTexture = new Texture("Menu/quit.png");
+
+        volumeButtonTexture = new Texture("icon/volume button.png");
+        increaseButtonTexture = new Texture("Volumn/increase.png");
+        decreaseButtonTexture = new Texture("Volumn/decrease.png");
+
+        showVolumePanel = false;
 
         setupButtons();
     }
@@ -39,6 +55,33 @@ public class MenuScreen extends BaseScreen {
         optionButton = new Rectangle(buttonX, screenHeight * 0.44f, buttonWidth, buttonHeight);
         creditButton = new Rectangle(buttonX, screenHeight * 0.30f, buttonWidth, buttonHeight);
         quitButton = new Rectangle(buttonX, screenHeight * 0.16f, buttonWidth, buttonHeight);
+
+        float iconSize = screenHeight * 0.12f;
+        float margin = screenWidth * 0.04f;
+
+        // Volume button outside Option screen, on the main menu top-right.
+        volumeButton = new Rectangle(
+            screenWidth - margin - iconSize,
+            screenHeight * 0.82f,
+            iconSize,
+            iconSize
+        );
+
+        float soundButtonSize = screenHeight * 0.11f;
+
+        decreaseButton = new Rectangle(
+            screenWidth - margin - iconSize * 2.4f,
+            screenHeight * 0.66f,
+            soundButtonSize,
+            soundButtonSize
+        );
+
+        increaseButton = new Rectangle(
+            screenWidth - margin - iconSize,
+            screenHeight * 0.66f,
+            soundButtonSize,
+            soundButtonSize
+        );
     }
 
     private void update() {
@@ -49,13 +92,33 @@ public class MenuScreen extends BaseScreen {
         float touchX = Gdx.input.getX();
         float touchY = screenHeight - Gdx.input.getY();
 
+        if (volumeButton.contains(touchX, touchY)) {
+            game.getSoundManager().playClick();
+            showVolumePanel = !showVolumePanel;
+            return;
+        }
+
+        if (showVolumePanel && decreaseButton.contains(touchX, touchY)) {
+            game.getSoundManager().decreaseVolume();
+            return;
+        }
+
+        if (showVolumePanel && increaseButton.contains(touchX, touchY)) {
+            game.getSoundManager().increaseVolume();
+            return;
+        }
+
         if (startButton.contains(touchX, touchY)) {
+            game.getSoundManager().playClick();
             game.showLevelSelectScreen();
         } else if (optionButton.contains(touchX, touchY)) {
+            game.getSoundManager().playClick();
             game.showHelpScreen();
         } else if (creditButton.contains(touchX, touchY)) {
+            game.getSoundManager().playClick();
             game.showCreditScreen();
         } else if (quitButton.contains(touchX, touchY)) {
+            game.getSoundManager().playClick();
             Gdx.app.exit();
         }
     }
@@ -72,6 +135,14 @@ public class MenuScreen extends BaseScreen {
 
         game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
 
+        drawVolumeButton();
+
+        if (showVolumePanel) {
+            drawVolumePanel();
+            game.batch.end();
+            return;
+        }
+
         drawBoldTextWithBox(titleFont, "Assignment 2 RPG Games", screenHeight * 0.86f, 45, 22);
 
         game.batch.draw(startButtonTexture, startButton.x, startButton.y, startButton.width, startButton.height);
@@ -80,6 +151,50 @@ public class MenuScreen extends BaseScreen {
         game.batch.draw(quitButtonTexture, quitButton.x, quitButton.y, quitButton.width, quitButton.height);
 
         game.batch.end();
+    }
+
+    private void drawVolumeButton() {
+        game.batch.draw(
+            volumeButtonTexture,
+            volumeButton.x,
+            volumeButton.y,
+            volumeButton.width,
+            volumeButton.height
+        );
+    }
+
+    private void drawVolumePanel() {
+        drawBoldTextWithBox(
+            titleFont,
+            "Sound Setting",
+            screenHeight * 0.76f,
+            45,
+            22
+        );
+
+        drawBoldTextWithBox(
+            smallFont,
+            "Volume: " + game.getSoundManager().getVolumePercent() + "%",
+            screenHeight * 0.55f,
+            30,
+            14
+        );
+
+        game.batch.draw(
+            decreaseButtonTexture,
+            decreaseButton.x,
+            decreaseButton.y,
+            decreaseButton.width,
+            decreaseButton.height
+        );
+
+        game.batch.draw(
+            increaseButtonTexture,
+            increaseButton.x,
+            increaseButton.y,
+            increaseButton.width,
+            increaseButton.height
+        );
     }
 
     @Override
@@ -97,5 +212,9 @@ public class MenuScreen extends BaseScreen {
         optionButtonTexture.dispose();
         creditButtonTexture.dispose();
         quitButtonTexture.dispose();
+
+        volumeButtonTexture.dispose();
+        increaseButtonTexture.dispose();
+        decreaseButtonTexture.dispose();
     }
 }

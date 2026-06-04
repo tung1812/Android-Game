@@ -14,6 +14,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
+
 public class GameScreen extends BaseScreen {
 
     private Texture backgroundTexture;
@@ -113,7 +114,8 @@ public class GameScreen extends BaseScreen {
 
     private void loadMap() {
         try {
-            tiledMap = new TmxMapLoader().load("maps/level1.tmx");
+            String mapPath = game.getLevelManager().getCurrentMapPath();
+            tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();

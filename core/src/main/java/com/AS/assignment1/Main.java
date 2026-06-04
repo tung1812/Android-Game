@@ -8,22 +8,25 @@ import com.AS.assignment1.screens.LevelSelectScreen;
 import com.AS.assignment1.screens.MenuScreen;
 // import com.AS.assignment1.screens.WinScreen;
 import com.AS.assignment1.world.LevelManager;
+import com.AS.assignment1.world.SoundManager;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+
 public class Main extends Game {
 
     public SpriteBatch batch;
 
     private LevelManager levelManager;
+    private SoundManager soundManager;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-
+        soundManager = new SoundManager();
         levelManager = new LevelManager();
 
         showMenuScreen();
@@ -76,6 +79,10 @@ public class Main extends Game {
     //     changeScreen(new WinScreen(this));
     // }
 
+    public SoundManager getSoundManager() {
+        return soundManager;
+    }
+
     @Override
     public void render() {
         super.render();
@@ -89,6 +96,9 @@ public class Main extends Game {
 
         if (batch != null) {
             batch.dispose();
+        }
+        if (soundManager != null) {
+            soundManager.dispose();
         }
     }
 }
