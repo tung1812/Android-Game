@@ -2,6 +2,7 @@ package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
 import com.AS.assignment1.entities.Player;
+import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -13,7 +14,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
-
+import com.badlogic.gdx.math.Vector2;
 public class GameScreen extends BaseScreen {
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
@@ -42,13 +43,10 @@ public class GameScreen extends BaseScreen {
 
         setupButtons();
         setupMapCamera();
-        loadMap();
 
         enemyManager = new EnemyManager();
 
-        if (player != null) {
-            enemyManager.addEnemy(player.getX() + 200f, player.getY());
-        }
+        loadMap();
     }
 
     private void setupButtons() {
@@ -121,13 +119,25 @@ public class GameScreen extends BaseScreen {
             float centerX = 0;
             float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
 
-            player = new Player(centerX, centerY);
+            SpawnManager spawnManager = new SpawnManager(tiledMap);
+
+            Vector2 playerSpawn = spawnManager.getSpawnPoint("player", centerX, centerY);
+            Vector2 enemySpawn = spawnManager.getSpawnPoint("enemy1", playerSpawn.x + 200f, playerSpawn.y);
+
+            player = new Player(playerSpawn.x, playerSpawn.y);
+
+            if (enemyManager != null) {
+                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+            }
 
             mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.zoom = 1.0f;
             mapCamera.update();
 
             Gdx.app.log("MAP", "Map loaded successfully");
+            Gdx.app.log("SPAWN", "Player spawn: " + playerSpawn.x + ", " + playerSpawn.y);
+            Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
+
         } catch (Exception e) {
             Gdx.app.error("MAP", "Failed to load map", e);
 
