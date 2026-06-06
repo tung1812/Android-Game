@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="isometric" renderorder="left-down" width="30" height="30" tilewidth="32" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="8">
+<map version="1.10" tiledversion="1.12.1" orientation="isometric" renderorder="left-down" width="30" height="30" tilewidth="32" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="6">
  <tileset firstgid="1" source="tileset.tsx"/>
  <layer id="1" name="Tile Layer 1" width="30" height="30">
   <data encoding="csv">
@@ -18,7 +18,7 @@
 49,6,6,6,6,6,6,56,56,56,93,93,6,6,6,6,49,49,49,49,6,6,6,6,6,6,6,6,6,6,
 49,6,6,6,6,6,6,56,56,56,93,93,83,6,6,6,49,49,49,49,49,6,6,65,6,6,6,6,6,6,
 49,6,6,6,6,6,6,56,56,56,93,93,83,6,6,6,49,49,49,49,49,6,6,6,6,6,6,6,6,6,
-49,6,6,6,6,6,6,56,56,56,93,56,56,6,6,6,49,49,49,49,49,49,6,6,6,6,80,6,6,6,
+49,6,6,6,6,6,6,56,56,56,93,56,56,6,6,6,49,49,49,49,49,49,6,6,6,6,6,6,6,6,
 49,6,6,6,6,6,56,56,56,56,56,56,56,6,6,56,56,56,49,49,49,49,6,6,6,6,6,6,6,6,
 49,6,6,65,6,6,56,56,56,56,56,56,56,56,56,56,56,56,49,49,49,49,6,6,6,6,6,6,6,6,
 49,6,65,65,65,6,6,56,56,56,56,56,56,56,56,56,56,83,49,49,49,49,56,49,49,6,6,6,6,6,
@@ -35,16 +35,6 @@
 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
 </data>
  </layer>
- <objectgroup id="4" name="Interactables">
-  <object id="7" name="stairsToLevel2" gid="80" x="436.333" y="266.333" width="32" height="32">
-   <properties>
-    <property name="targetMap" value="maps/level2.tmx"/>
-    <property name="targetSpawn" value="player"/>
-    <property name="tileCol" type="int" value="26"/>
-    <property name="tileRow" type="int" value="15"/>
-   </properties>
-  </object>
- </objectgroup>
  <layer id="3" name="Collision" width="30" height="30" visible="0">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

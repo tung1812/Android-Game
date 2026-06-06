@@ -5,6 +5,7 @@ import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
 import com.AS.assignment1.world.CollisionManager;
+import com.AS.assignment1.world.LevelManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -35,7 +36,8 @@ public class GameScreen extends BaseScreen {
     private Player player;
     private EnemyManager enemyManager;
     private CollisionManager collisionManager;
-
+    private LevelManager levelManager;
+    private String currentMapPath;
     public GameScreen(Main game) {
         super(game);
 
@@ -46,9 +48,7 @@ public class GameScreen extends BaseScreen {
         setupButtons();
         setupMapCamera();
 
-        enemyManager = new EnemyManager();
-
-        loadMap();
+        loadMap("maps/level1.tmx", "player");
     }
 
     private void setupButtons() {
@@ -107,11 +107,16 @@ public class GameScreen extends BaseScreen {
         mapCamera.update();
     }
 
-    private void loadMap() {
+    private void loadMap(String mapPath, String spawnName) {
         try {
-            tiledMap = new TmxMapLoader().load("maps/level1.tmx");
+            disposeCurrentLevel();
+
+            currentMapPath = mapPath;
+
+            tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
             collisionManager = new CollisionManager(tiledMap);
+            levelManager = new LevelManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -124,30 +129,53 @@ public class GameScreen extends BaseScreen {
 
             SpawnManager spawnManager = new SpawnManager(tiledMap);
 
-            Vector2 playerSpawn = spawnManager.getSpawnPoint("player", centerX, centerY);
+            Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, centerX, centerY);
             Vector2 enemySpawn = spawnManager.getSpawnPoint("enemy1", playerSpawn.x + 200f, playerSpawn.y);
 
-            player = new Player(playerSpawn.x, playerSpawn.y);
-
-            if (enemyManager != null) {
-                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+            if (player == null) {
+                player = new Player(playerSpawn.x, playerSpawn.y);
+            } else {
+                player.setPosition(playerSpawn.x, playerSpawn.y);
             }
+
+            enemyManager = new EnemyManager();
+            enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
 
             mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.zoom = 1.0f;
             mapCamera.update();
 
-            Gdx.app.log("MAP", "Map loaded successfully");
+            Gdx.app.log("MAP", "Loaded map: " + mapPath);
             Gdx.app.log("SPAWN", "Player spawn: " + playerSpawn.x + ", " + playerSpawn.y);
             Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
 
         } catch (Exception e) {
-            Gdx.app.error("MAP", "Failed to load map", e);
+            Gdx.app.error("MAP", "Failed to load map: " + mapPath, e);
 
             tiledMap = null;
             mapRenderer = null;
             player = null;
         }
+    }
+
+    private void disposeCurrentLevel() {
+        if (enemyManager != null) {
+            enemyManager.dispose();
+            enemyManager = null;
+        }
+
+        if (tiledMap != null) {
+            tiledMap.dispose();
+            tiledMap = null;
+        }
+
+        if (mapRenderer != null) {
+            mapRenderer.dispose();
+            mapRenderer = null;
+        }
+
+        collisionManager = null;
+        levelManager = null;
     }
 
     private boolean update(float deltaTime) {
@@ -189,6 +217,15 @@ public class GameScreen extends BaseScreen {
         if (player != null && player.isDead()) {
             game.showDeathScreen();
             return false;
+        }
+
+        if (levelManager != null && player != null) {
+            LevelManager.TransitionResult transition = levelManager.checkTransition(player.getBounds());
+
+            if (transition != null) {
+                loadMap(transition.getTargetMap(), transition.getTargetSpawn());
+                return true;
+            }
         }
 
         if (mapCamera != null && player != null) {
@@ -326,20 +363,11 @@ public class GameScreen extends BaseScreen {
         menuButtonTexture.dispose();
         heartFullTexture.dispose();
 
+        disposeCurrentLevel();
+
         if (player != null) {
             player.dispose();
-        }
-
-        if (enemyManager != null) {
-            enemyManager.dispose();
-        }
-
-        if (tiledMap != null) {
-            tiledMap.dispose();
-        }
-
-        if (mapRenderer != null) {
-            mapRenderer.dispose();
+            player = null;
         }
     }
 }

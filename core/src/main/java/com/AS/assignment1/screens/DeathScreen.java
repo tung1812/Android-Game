@@ -9,7 +9,7 @@ public class DeathScreen extends BaseScreen {
     public DeathScreen(Main game) {
         super(game);
     }
-    
+
     @Override
     public void render(float delta) {
         if (!update()) {

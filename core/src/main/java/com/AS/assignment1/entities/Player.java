@@ -266,6 +266,11 @@ public class Player {
         return y;
     }
 
+    public void setPosition(float newX, float newY) {
+        x = newX;
+        y = newY;
+    }
+
     public boolean isAttacking() {
         return attacking;
     }
