@@ -1,5 +1,6 @@
 package com.AS.assignment1.entities;
 
+import com.AS.assignment1.world.CollisionManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -57,10 +58,17 @@ public class Enemy {
         walkAnimation.setPlayMode(Animation.PlayMode.LOOP);
     }
 
-    public void update(float deltaTime) {
+    public void update(float deltaTime, CollisionManager collisionManager) {
         animationTime += deltaTime;
 
-        x += direction * speed * deltaTime;
+        float dx = direction * speed * deltaTime;
+
+        if (canMove(dx, 0, collisionManager)) {
+            x += dx;
+        } else {
+            direction *= -1;
+            return;
+        }
 
         if (x > startX + patrolDistance) {
             x = startX + patrolDistance;
@@ -69,6 +77,17 @@ public class Enemy {
             x = startX - patrolDistance;
             direction = 1;
         }
+    }
+
+    private boolean canMove(float dx, float dy, CollisionManager collisionManager) {
+        float targetX = x + dx;
+        float targetY = y + dy;
+
+        if (collisionManager == null) {
+            return true;
+        }
+
+        return !collisionManager.isBlockedAtCharacter(targetX, targetY, 6f);
     }
 
     public void draw(SpriteBatch batch) {

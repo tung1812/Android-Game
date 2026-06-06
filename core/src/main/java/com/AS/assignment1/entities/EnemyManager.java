@@ -1,5 +1,6 @@
 package com.AS.assignment1.entities;
 
+import com.AS.assignment1.world.CollisionManager;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 
@@ -14,9 +15,9 @@ public class EnemyManager {
         enemies.add(new Enemy(x, y));
     }
 
-    public void update(float deltaTime) {
+    public void update(float deltaTime, CollisionManager collisionManager) {
         for (Enemy enemy : enemies) {
-            enemy.update(deltaTime);
+            enemy.update(deltaTime, collisionManager);
         }
     }
 
