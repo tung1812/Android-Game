@@ -2,11 +2,11 @@ package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
 import com.AS.assignment1.entities.Player;
-import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
+import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.world.CollisionManager;
-import com.AS.assignment1.world.LevelManager;
 import com.AS.assignment1.world.MapTransitionManager;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -18,7 +18,9 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+
 public class GameScreen extends BaseScreen {
+
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
@@ -38,8 +40,6 @@ public class GameScreen extends BaseScreen {
     private Rectangle rightButton;
     private Rectangle attackButton;
 
-    private int startTileCol = 2;
-    private int startTileRow = 2;
     private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
@@ -50,6 +50,7 @@ public class GameScreen extends BaseScreen {
     private EnemyManager enemyManager;
     private CollisionManager collisionManager;
     private MapTransitionManager mapTransitionManager;
+
     private String currentMapPath;
 
     public GameScreen(Main game) {
@@ -61,6 +62,7 @@ public class GameScreen extends BaseScreen {
 
         buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
         attackButtonTexture = new Texture("Buttons/attack.png");
+
         loadButtonRegions();
 
         attackSoundPlayed = false;
@@ -144,6 +146,7 @@ public class GameScreen extends BaseScreen {
 
             tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
+
             collisionManager = new CollisionManager(tiledMap);
             mapTransitionManager = new MapTransitionManager(tiledMap);
 
@@ -153,12 +156,12 @@ public class GameScreen extends BaseScreen {
             int mapHeight = properties.get("height", Integer.class);
             int tileHeight = properties.get("tileheight", Integer.class);
 
-            float centerX = 0;
-            float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
+            float fallbackX = 0;
+            float fallbackY = (mapWidth + mapHeight) * tileHeight / 4f;
 
             SpawnManager spawnManager = new SpawnManager(tiledMap);
 
-            Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, centerX, centerY);
+            Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, fallbackX, fallbackY);
             Vector2 enemySpawn = spawnManager.getSpawnPoint("enemy1", playerSpawn.x + 200f, playerSpawn.y);
 
             if (player == null) {
@@ -183,6 +186,9 @@ public class GameScreen extends BaseScreen {
 
             tiledMap = null;
             mapRenderer = null;
+            collisionManager = null;
+            mapTransitionManager = null;
+            enemyManager = null;
             player = null;
         }
     }
@@ -247,8 +253,6 @@ public class GameScreen extends BaseScreen {
                 touching,
                 collisionManager
             );
-
-
         }
 
         if (enemyManager != null) {
@@ -287,6 +291,7 @@ public class GameScreen extends BaseScreen {
             mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.update();
         }
+
         return true;
     }
 
@@ -327,13 +332,32 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
-        game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
+        game.batch.draw(
+            menuButtonTexture,
+            menuButton.x,
+            menuButton.y,
+            menuButton.width,
+            menuButton.height
+        );
 
         drawHealthBar();
         drawControlButtons();
 
-        drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
+        drawBoldTextWithBox(
+            titleFont,
+            "LEVEL " + game.getLevelManager().getSelectedLevel(),
+            screenHeight * 0.92f,
+            45,
+            22
+        );
+
+        drawBoldTextWithBox(
+            smallFont,
+            "Use buttons to move Reiko",
+            screenHeight * 0.08f,
+            30,
+            14
+        );
 
         game.batch.end();
     }
@@ -346,8 +370,14 @@ public class GameScreen extends BaseScreen {
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
         drawBoldTextWithBox(titleFont, "Map Error", screenHeight * 0.70f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Cannot load maps/level1.tmx", screenHeight * 0.55f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Check level1.tmx, tileset.tsx, and spritesheet.png", screenHeight * 0.45f, 35, 18);
+
+        if (currentMapPath != null) {
+            drawBoldTextWithBox(smallFont, "Cannot load " + currentMapPath, screenHeight * 0.55f, 35, 18);
+        } else {
+            drawBoldTextWithBox(smallFont, "Cannot load selected map", screenHeight * 0.55f, 35, 18);
+        }
+
+        drawBoldTextWithBox(smallFont, "Check map, tileset, and spawn objects", screenHeight * 0.45f, 35, 18);
         drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.35f, 35, 18);
 
         game.batch.end();
@@ -438,6 +468,7 @@ public class GameScreen extends BaseScreen {
 
         if (attackButtonTexture != null) {
             attackButtonTexture.dispose();
+            attackButtonTexture = null;
         }
 
         disposeCurrentLevel();
