@@ -4,6 +4,7 @@ import com.AS.assignment1.Main;
 import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
+import com.AS.assignment1.world.CollisionManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -33,6 +34,7 @@ public class GameScreen extends BaseScreen {
 
     private Player player;
     private EnemyManager enemyManager;
+    private CollisionManager collisionManager;
 
     public GameScreen(Main game) {
         super(game);
@@ -109,6 +111,7 @@ public class GameScreen extends BaseScreen {
         try {
             tiledMap = new TmxMapLoader().load("maps/level1.tmx");
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
+            collisionManager = new CollisionManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -172,7 +175,8 @@ public class GameScreen extends BaseScreen {
                 attackButton,
                 touchX,
                 touchY,
-                touching
+                touching,
+                collisionManager
             );
 
 //            if (player.isDead()) {

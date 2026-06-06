@@ -1,5 +1,6 @@
 package com.AS.assignment1.entities;
 
+import com.AS.assignment1.world.CollisionManager;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -130,7 +131,8 @@ public class Player {
         Rectangle attackButton,
         float touchX,
         float touchY,
-        boolean touching
+        boolean touching,
+        CollisionManager collisionManager
     ) {
         animationTime += deltaTime;
 
@@ -150,23 +152,19 @@ public class Player {
 
             if (!attacking) {
                 if (leftButton.contains(touchX, touchY)) {
-                    x -= speed * deltaTime;
-                    moving = true;
+                    moving = tryMove(-speed * deltaTime, 0, collisionManager);
                 }
 
                 if (rightButton.contains(touchX, touchY)) {
-                    x += speed * deltaTime;
-                    moving = true;
+                    moving = tryMove(speed * deltaTime, 0, collisionManager);
                 }
 
                 if (upButton.contains(touchX, touchY)) {
-                    y += speed * deltaTime;
-                    moving = true;
+                    moving = tryMove(0, speed * deltaTime, collisionManager);
                 }
 
                 if (downButton.contains(touchX, touchY)) {
-                    y -= speed * deltaTime;
-                    moving = true;
+                    moving = tryMove(0, -speed * deltaTime, collisionManager);
                 }
             }
         }
@@ -184,6 +182,20 @@ public class Player {
         } else {
             playerState = PlayerState.IDLE;
         }
+    }
+
+    private boolean tryMove(float dx, float dy, CollisionManager collisionManager) {
+        float targetX = x + dx;
+        float targetY = y + dy;
+
+        if (collisionManager == null ||
+            !collisionManager.isBlockedAtCharacter(targetX, targetY, 16f)) {
+            x = targetX;
+            y = targetY;
+            return true;
+        }
+
+        return false;
     }
 
     public void draw(SpriteBatch batch) {

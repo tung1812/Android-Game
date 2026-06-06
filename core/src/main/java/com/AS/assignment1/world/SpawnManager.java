@@ -79,8 +79,8 @@ public class SpawnManager {
     }
 
     private Vector2 tileToWorld(int tileCol, int tileRow) {
-        float worldX = (tileCol - tileRow) * tileWidth / 2f;
-        float worldY = (tileCol + tileRow) * tileHeight / 2f;
+        float worldX = (tileCol + tileRow) * tileWidth / 2f;
+        float worldY = (tileRow - tileCol) * tileHeight / 2f;
 
         return new Vector2(worldX, worldY);
     }
