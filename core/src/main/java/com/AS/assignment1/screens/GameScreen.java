@@ -11,6 +11,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
@@ -18,15 +20,12 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 
 public class GameScreen extends BaseScreen {
 
     private Texture backgroundTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
-
     private Texture darkOverlayTexture;
     private Texture buttonSheetTexture;
     private Texture attackButtonTexture;
@@ -59,14 +58,18 @@ public class GameScreen extends BaseScreen {
     public GameScreen(Main game) {
         super(game);
 
+        currentMapPath = game.getLevelManager().getCurrentMapPath();
+
         backgroundTexture = new Texture(getLevelBackgroundPath());
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
+
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(0f, 0f, 0f, 0.85f);
         pixmap.fill();
         darkOverlayTexture = new Texture(pixmap);
         pixmap.dispose();
+
         buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
         attackButtonTexture = new Texture("Buttons/attack.png");
 
@@ -77,7 +80,7 @@ public class GameScreen extends BaseScreen {
         setupButtons();
         setupMapCamera();
 
-        loadMap(game.getLevelManager().getCurrentMapPath(), "player");
+        loadMap(currentMapPath, "player");
     }
 
     private void setupButtons() {
@@ -142,6 +145,22 @@ public class GameScreen extends BaseScreen {
     private void setupMapCamera() {
         mapCamera = new OrthographicCamera();
         mapCamera.setToOrtho(false, screenWidth, screenHeight);
+        mapCamera.zoom = 0.55f;
+        mapCamera.update();
+    }
+
+    private void focusCameraOnPlayer() {
+        if (mapCamera == null || player == null) {
+            return;
+        }
+
+        mapCamera.position.set(
+            player.getX(),
+            player.getY(),
+            0
+        );
+
+        mapCamera.zoom = 0.35f;
         mapCamera.update();
     }
 
@@ -150,6 +169,7 @@ public class GameScreen extends BaseScreen {
             disposeCurrentLevel();
 
             currentMapPath = mapPath;
+            reloadLevelBackground();
 
             tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
@@ -180,9 +200,7 @@ public class GameScreen extends BaseScreen {
             enemyManager = new EnemyManager();
             enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
 
-            mapCamera.position.set(player.getX(), player.getY(), 0);
-            mapCamera.zoom = 1.0f;
-            mapCamera.update();
+            focusCameraOnPlayer();
 
             Gdx.app.log("MAP", "Loaded map: " + mapPath);
             Gdx.app.log("SPAWN", "Player spawn: " + playerSpawn.x + ", " + playerSpawn.y);
@@ -294,10 +312,7 @@ public class GameScreen extends BaseScreen {
             }
         }
 
-        if (mapCamera != null && player != null) {
-            mapCamera.position.set(player.getX(), player.getY(), 0);
-            mapCamera.update();
-        }
+        focusCameraOnPlayer();
 
         return true;
     }
@@ -375,7 +390,10 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
-        game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+        if (backgroundTexture != null) {
+            game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+        }
+
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
         drawBoldTextWithBox(titleFont, "Map Error", screenHeight * 0.70f, 45, 22);
@@ -454,6 +472,20 @@ public class GameScreen extends BaseScreen {
     }
 
     private String getLevelBackgroundPath() {
+        if (currentMapPath != null) {
+            if (currentMapPath.contains("level1")) {
+                return "level_1.jpg";
+            }
+
+            if (currentMapPath.contains("level2")) {
+                return "level_2.jpg";
+            }
+
+            if (currentMapPath.contains("level3")) {
+                return "level_3.png";
+            }
+        }
+
         int level = game.getLevelManager().getSelectedLevel();
 
         if (level == 1) {
@@ -465,13 +497,25 @@ public class GameScreen extends BaseScreen {
         }
 
         if (level == 3) {
-            return "level_3png";
+            return "level_3.png";
         }
 
         return "level_1.jpg";
     }
 
+    private void reloadLevelBackground() {
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+        }
+
+        backgroundTexture = new Texture(getLevelBackgroundPath());
+    }
+
     private void drawLevelBackground() {
+        if (backgroundTexture == null || darkOverlayTexture == null) {
+            return;
+        }
+
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
@@ -493,21 +537,38 @@ public class GameScreen extends BaseScreen {
         if (mapCamera != null) {
             mapCamera.viewportWidth = screenWidth;
             mapCamera.viewportHeight = screenHeight;
-            mapCamera.update();
+            focusCameraOnPlayer();
         }
     }
-
-
 
     @Override
     public void dispose() {
         super.dispose();
 
-        backgroundTexture.dispose();
-        menuButtonTexture.dispose();
-        heartFullTexture.dispose();
-        darkOverlayTexture.dispose();
-        buttonSheetTexture.dispose();
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+            backgroundTexture = null;
+        }
+
+        if (menuButtonTexture != null) {
+            menuButtonTexture.dispose();
+            menuButtonTexture = null;
+        }
+
+        if (heartFullTexture != null) {
+            heartFullTexture.dispose();
+            heartFullTexture = null;
+        }
+
+        if (darkOverlayTexture != null) {
+            darkOverlayTexture.dispose();
+            darkOverlayTexture = null;
+        }
+
+        if (buttonSheetTexture != null) {
+            buttonSheetTexture.dispose();
+            buttonSheetTexture = null;
+        }
 
         if (attackButtonTexture != null) {
             attackButtonTexture.dispose();

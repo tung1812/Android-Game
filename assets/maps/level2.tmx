@@ -38,7 +38,7 @@
  <objectgroup id="4" name="Interactables">
   <object id="9" name="finalExit" x="20.9327" y="164.736" width="13.5585" height="12.4517">
    <properties>
-    <property name="targetMap" value="level3.tmx"/>
+    <property name="targetMap" value="maps/level3.tmx"/>
     <property name="targetSpawn" value="player"/>
     <property name="tileCol" type="int" value="8"/>
     <property name="tileRow" type="int" value="16"/>
