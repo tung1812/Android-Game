@@ -18,6 +18,8 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 
 public class GameScreen extends BaseScreen {
 
@@ -25,6 +27,7 @@ public class GameScreen extends BaseScreen {
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
 
+    private Texture darkOverlayTexture;
     private Texture buttonSheetTexture;
     private Texture attackButtonTexture;
 
@@ -56,10 +59,14 @@ public class GameScreen extends BaseScreen {
     public GameScreen(Main game) {
         super(game);
 
-        backgroundTexture = new Texture("background.jpg");
+        backgroundTexture = new Texture(getLevelBackgroundPath());
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
-
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0f, 0f, 0f, 0.85f);
+        pixmap.fill();
+        darkOverlayTexture = new Texture(pixmap);
+        pixmap.dispose();
         buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
         attackButtonTexture = new Texture("Buttons/attack.png");
 
@@ -313,6 +320,8 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        drawLevelBackground();
+
         mapRenderer.setView(mapCamera);
         mapRenderer.render();
 
@@ -444,6 +453,37 @@ public class GameScreen extends BaseScreen {
         );
     }
 
+    private String getLevelBackgroundPath() {
+        int level = game.getLevelManager().getSelectedLevel();
+
+        if (level == 1) {
+            return "level_1.jpg";
+        }
+
+        if (level == 2) {
+            return "level_2.jpg";
+        }
+
+        if (level == 3) {
+            return "level_3png";
+        }
+
+        return "level_1.jpg";
+    }
+
+    private void drawLevelBackground() {
+        game.batch.setProjectionMatrix(uiCamera.combined);
+        game.batch.begin();
+
+        game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+
+        game.batch.setColor(1f, 1f, 1f, 0.45f);
+        game.batch.draw(darkOverlayTexture, 0, 0, screenWidth, screenHeight);
+        game.batch.setColor(Color.WHITE);
+
+        game.batch.end();
+    }
+
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
@@ -457,6 +497,8 @@ public class GameScreen extends BaseScreen {
         }
     }
 
+
+
     @Override
     public void dispose() {
         super.dispose();
@@ -464,6 +506,7 @@ public class GameScreen extends BaseScreen {
         backgroundTexture.dispose();
         menuButtonTexture.dispose();
         heartFullTexture.dispose();
+        darkOverlayTexture.dispose();
         buttonSheetTexture.dispose();
 
         if (attackButtonTexture != null) {
