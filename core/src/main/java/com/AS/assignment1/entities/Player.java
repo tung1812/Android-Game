@@ -189,7 +189,7 @@ public class Player {
         float targetY = y + dy;
 
         if (collisionManager == null ||
-            !collisionManager.isBlockedAtCharacter(targetX, targetY, 16f)) {
+            !collisionManager.isBlockedAtCharacter(targetX, targetY, 12f)) {
             x = targetX;
             y = targetY;
             return true;
