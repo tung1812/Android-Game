@@ -150,7 +150,7 @@ public class GameScreen extends BaseScreen {
         }
     }
 
-    private void update(float deltaTime) {
+    private boolean update(float deltaTime) {
         boolean touching = Gdx.input.isTouched();
         float touchX = 0;
         float touchY = 0;
@@ -161,7 +161,7 @@ public class GameScreen extends BaseScreen {
 
             if (menuButton.contains(touchX, touchY)) {
                 game.showMenuScreen();
-                return;
+                return false;
             }
         }
 
@@ -179,25 +179,30 @@ public class GameScreen extends BaseScreen {
                 collisionManager
             );
 
-//            if (player.isDead()) {
-//                game.showDeathScreen();
-//                return;
-//            }
+
         }
 
         if (enemyManager != null) {
             enemyManager.update(deltaTime, collisionManager, player);
         }
 
+        if (player != null && player.isDead()) {
+            game.showDeathScreen();
+            return false;
+        }
+
         if (mapCamera != null && player != null) {
             mapCamera.position.set(player.getX(), player.getY(), 0);
             mapCamera.update();
         }
+        return true;
     }
 
     @Override
     public void render(float delta) {
-        update(delta);
+        if (!update(delta)) {
+            return;
+        }
 
         Gdx.gl.glClearColor(0.10f, 0.15f, 0.20f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);

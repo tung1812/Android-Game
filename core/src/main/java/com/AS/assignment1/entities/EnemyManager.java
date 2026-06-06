@@ -21,10 +21,11 @@ public class EnemyManager {
 
             enemy.update(deltaTime, collisionManager);
 
-            if (player != null && player.canDealAttackDamage()) {
-                if (player.getAttackBounds().overlaps(enemy.getBounds())) {
-                    enemy.takeDamage(1);
-                    player.registerAttackHit();
+            if (player != null && !enemy.isDead()) {
+                handlePlayerAttack(enemy, player);
+
+                if (!enemy.isDead()) {
+                    handleEnemyContact(enemy, player);
                 }
             }
 
@@ -32,6 +33,21 @@ public class EnemyManager {
                 enemy.dispose();
                 enemies.removeIndex(i);
             }
+        }
+    }
+
+    private void handlePlayerAttack(Enemy enemy, Player player) {
+        if (player.canDealAttackDamage() &&
+            player.getAttackBounds().overlaps(enemy.getBounds())) {
+
+            enemy.takeDamage(1);
+            player.registerAttackHit();
+        }
+    }
+
+    private void handleEnemyContact(Enemy enemy, Player player) {
+        if (enemy.getBounds().overlaps(player.getBounds())) {
+            player.takeDamage(1);
         }
     }
 

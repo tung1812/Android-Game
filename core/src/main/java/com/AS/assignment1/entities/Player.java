@@ -279,6 +279,20 @@ public class Player {
         );
     }
 
+    public void takeDamage(int amount) {
+        if (damageTimer > 0) {
+            return;
+        }
+
+        health -= amount;
+
+        if (health < 0) {
+            health = 0;
+        }
+
+        damageTimer = damageCooldown;
+    }
+
     public Rectangle getAttackBounds() {
         float bodyHalfWidth = 18f;
         float attackLength = 52f;

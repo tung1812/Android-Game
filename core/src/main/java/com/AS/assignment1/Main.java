@@ -1,7 +1,7 @@
 package com.AS.assignment1;
 
 //import com.AS.assignment1.screens.CreditScreen;
-//import com.AS.assignment1.screens.DeathScreen;
+import com.AS.assignment1.screens.DeathScreen;
 import com.AS.assignment1.screens.GameScreen;
 //import com.AS.assignment1.screens.HelpScreen;
 import com.AS.assignment1.screens.MenuScreen;
@@ -9,6 +9,7 @@ import com.AS.assignment1.screens.MenuScreen;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.Gdx;
 
 public class Main extends Game {
     public SpriteBatch batch;
@@ -25,7 +26,12 @@ public class Main extends Game {
         setScreen(newScreen);
 
         if (oldScreen != null) {
-            oldScreen.dispose();
+            Gdx.app.postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    oldScreen.dispose();
+                }
+            });
         }
     }
 
@@ -45,10 +51,10 @@ public class Main extends Game {
         changeScreen(new GameScreen(this));
     }
 
-//    public void showDeathScreen() {
-//        changeScreen(new DeathScreen(this));
-//    }
-//
+    public void showDeathScreen() {
+        changeScreen(new DeathScreen(this));
+    }
+
 //    public void showWinScreen() {
 //        changeScreen(new WinScreen(this));
 //    }
