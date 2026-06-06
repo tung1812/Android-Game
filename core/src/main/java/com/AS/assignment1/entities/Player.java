@@ -303,9 +303,9 @@ public class Player {
         );
     }
 
-    public void takeDamage(int amount) {
+    public boolean takeDamage(int amount) {
         if (damageTimer > 0) {
-            return;
+            return false;
         }
 
         health -= amount;
@@ -315,6 +315,8 @@ public class Player {
         }
 
         damageTimer = damageCooldown;
+
+        return true;
     }
 
     public Rectangle getAttackBounds() {

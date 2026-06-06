@@ -15,7 +15,9 @@ public class EnemyManager {
         enemies.add(new Enemy(x, y));
     }
 
-    public void update(float deltaTime, CollisionManager collisionManager, Player player) {
+    public boolean update(float deltaTime, CollisionManager collisionManager, Player player) {
+        boolean playerDamaged = false;
+
         for (int i = enemies.size - 1; i >= 0; i--) {
             Enemy enemy = enemies.get(i);
 
@@ -25,7 +27,11 @@ public class EnemyManager {
                 handlePlayerAttack(enemy, player);
 
                 if (!enemy.isDead()) {
-                    handleEnemyContact(enemy, player);
+                    boolean damaged = handleEnemyContact(enemy, player);
+
+                    if (damaged) {
+                        playerDamaged = true;
+                    }
                 }
             }
 
@@ -34,21 +40,25 @@ public class EnemyManager {
                 enemies.removeIndex(i);
             }
         }
+
+        return playerDamaged;
     }
 
     private void handlePlayerAttack(Enemy enemy, Player player) {
-        if (player.canDealAttackDamage() &&
-            player.getAttackBounds().overlaps(enemy.getBounds())) {
+        if (player.canDealAttackDamage()
+            && player.getAttackBounds().overlaps(enemy.getBounds())) {
 
             enemy.takeDamage(1);
             player.registerAttackHit();
         }
     }
 
-    private void handleEnemyContact(Enemy enemy, Player player) {
+    private boolean handleEnemyContact(Enemy enemy, Player player) {
         if (enemy.getBounds().overlaps(player.getBounds())) {
-            player.takeDamage(1);
+            return player.takeDamage(1);
         }
+
+        return false;
     }
 
     public void draw(SpriteBatch batch) {

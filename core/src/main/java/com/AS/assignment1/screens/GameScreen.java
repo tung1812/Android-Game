@@ -285,8 +285,14 @@ public class GameScreen extends BaseScreen {
             );
         }
 
+        updateMoveSound(touchX, touchY, touching);
+
         if (enemyManager != null) {
-            enemyManager.update(deltaTime, collisionManager, player);
+            boolean playerDamaged = enemyManager.update(deltaTime, collisionManager, player);
+
+            if (playerDamaged) {
+                game.getSoundManager().playHurt();
+            }
         }
 
         if (player != null && player.isDead()) {
@@ -322,6 +328,27 @@ public class GameScreen extends BaseScreen {
         focusCameraOnPlayer();
 
         return true;
+    }
+
+    private void updateMoveSound(float touchX, float touchY, boolean touching) {
+        if (!touching) {
+            game.getSoundManager().stopMoveLoop();
+            return;
+        }
+
+        boolean moving =
+            leftButton.contains(touchX, touchY)
+                || rightButton.contains(touchX, touchY)
+                || upButton.contains(touchX, touchY)
+                || downButton.contains(touchX, touchY);
+
+        boolean attacking = attackButton.contains(touchX, touchY);
+
+        if (moving && !attacking) {
+            game.getSoundManager().startMoveLoop();
+        } else {
+            game.getSoundManager().stopMoveLoop();
+        }
     }
 
     @Override
@@ -582,6 +609,7 @@ public class GameScreen extends BaseScreen {
             attackButtonTexture = null;
         }
 
+        game.getSoundManager().stopMoveLoop();
         disposeCurrentLevel();
 
         if (player != null) {
