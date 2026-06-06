@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.math.Rectangle;
 
 public class Enemy {
     private Texture spriteSheet;
@@ -21,6 +22,10 @@ public class Enemy {
     private float speed;
     private float patrolDistance;
     private int direction;
+    private int health;
+    private boolean dead;
+    private float hitCooldown;
+    private float hitTimer;
 
     public Enemy(float startX, float startY) {
         this.x = startX;
@@ -29,6 +34,11 @@ public class Enemy {
 
         width = 64f;
         height = 64f;
+
+        health = 1;
+        dead = false;
+        hitCooldown = 0.8f;
+        hitTimer = 0f;
 
         animationTime = 0f;
 
@@ -59,6 +69,14 @@ public class Enemy {
     }
 
     public void update(float deltaTime, CollisionManager collisionManager) {
+        if (dead) {
+            return;
+        }
+
+        if (hitTimer > 0) {
+            hitTimer -= deltaTime;
+        }
+
         animationTime += deltaTime;
 
         float dx = direction * speed * deltaTime;
@@ -91,6 +109,10 @@ public class Enemy {
     }
 
     public void draw(SpriteBatch batch) {
+        if (dead) {
+            return;
+        }
+
         TextureRegion currentFrame = walkAnimation.getKeyFrame(animationTime, true);
 
         // Make a copy so flipping does not permanently affect the animation frame.
@@ -107,6 +129,32 @@ public class Enemy {
             width,
             height
         );
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(
+            x - 22f,
+            y + 4f,
+            44f,
+            40f
+        );
+    }
+
+    public void takeDamage(int amount) {
+        if (dead || hitTimer > 0) {
+            return;
+        }
+
+        health -= amount;
+        hitTimer = hitCooldown;
+
+        if (health <= 0) {
+            dead = true;
+        }
+    }
+
+    public boolean isDead() {
+        return dead;
     }
 
     public void dispose() {

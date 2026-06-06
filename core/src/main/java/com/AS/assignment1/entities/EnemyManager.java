@@ -15,9 +15,23 @@ public class EnemyManager {
         enemies.add(new Enemy(x, y));
     }
 
-    public void update(float deltaTime, CollisionManager collisionManager) {
-        for (Enemy enemy : enemies) {
+    public void update(float deltaTime, CollisionManager collisionManager, Player player) {
+        for (int i = enemies.size - 1; i >= 0; i--) {
+            Enemy enemy = enemies.get(i);
+
             enemy.update(deltaTime, collisionManager);
+
+            if (player != null && player.canDealAttackDamage()) {
+                if (player.getAttackBounds().overlaps(enemy.getBounds())) {
+                    enemy.takeDamage(1);
+                    player.registerAttackHit();
+                }
+            }
+
+            if (enemy.isDead()) {
+                enemy.dispose();
+                enemies.removeIndex(i);
+            }
         }
     }
 

@@ -186,7 +186,7 @@ public class GameScreen extends BaseScreen {
         }
 
         if (enemyManager != null) {
-            enemyManager.update(deltaTime, collisionManager);
+            enemyManager.update(deltaTime, collisionManager, player);
         }
 
         if (mapCamera != null && player != null) {

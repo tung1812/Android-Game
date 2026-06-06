@@ -35,6 +35,11 @@ public class Player {
     private float animationTime;
     private boolean attacking;
 
+    private float lastDirectionX;
+    private float lastDirectionY;
+
+    private boolean attackHitRegistered;
+
     private int maxHealth;
     private int health;
 
@@ -52,6 +57,9 @@ public class Player {
         animationTime = 0f;
         attacking = false;
         playerState = PlayerState.IDLE;
+        lastDirectionX = 0f;
+        lastDirectionY = -1f;
+        attackHitRegistered = false;
 
         maxHealth = 5;
         health = maxHealth;
@@ -145,25 +153,33 @@ public class Player {
         if (touching) {
             if (attackButton.contains(touchX, touchY) && !attacking) {
                 attacking = true;
+                attackHitRegistered = false;
                 animationTime = 0f;
                 playerState = PlayerState.ATTACK;
-
             }
 
             if (!attacking) {
                 if (leftButton.contains(touchX, touchY)) {
+                    lastDirectionX = -1f;
+                    lastDirectionY = 0f;
                     moving = tryMove(-speed * deltaTime, 0, collisionManager);
                 }
 
                 if (rightButton.contains(touchX, touchY)) {
+                    lastDirectionX = 1f;
+                    lastDirectionY = 0f;
                     moving = tryMove(speed * deltaTime, 0, collisionManager);
                 }
 
                 if (upButton.contains(touchX, touchY)) {
+                    lastDirectionX = 0f;
+                    lastDirectionY = 1f;
                     moving = tryMove(0, speed * deltaTime, collisionManager);
                 }
 
                 if (downButton.contains(touchX, touchY)) {
+                    lastDirectionX = 0f;
+                    lastDirectionY = -1f;
                     moving = tryMove(0, -speed * deltaTime, collisionManager);
                 }
             }
@@ -248,6 +264,73 @@ public class Player {
 
     public float getY() {
         return y;
+    }
+
+    public boolean isAttacking() {
+        return attacking;
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(
+            x - 16f,
+            y,
+            32f,
+            32f
+        );
+    }
+
+    public Rectangle getAttackBounds() {
+        float bodyHalfWidth = 18f;
+        float attackLength = 52f;
+        float attackWidth = 42f;
+
+        float attackCenterY = y + 12f;
+
+        // Facing right
+        if (lastDirectionX > 0) {
+            return new Rectangle(
+                x + bodyHalfWidth,
+                attackCenterY - attackWidth / 2f,
+                attackLength,
+                attackWidth
+            );
+        }
+
+        // Facing left
+        if (lastDirectionX < 0) {
+            return new Rectangle(
+                x - bodyHalfWidth - attackLength,
+                attackCenterY - attackWidth / 2f,
+                attackLength,
+                attackWidth
+            );
+        }
+
+        // Facing up
+        if (lastDirectionY > 0) {
+            return new Rectangle(
+                x - attackWidth / 2f,
+                attackCenterY + bodyHalfWidth,
+                attackWidth,
+                attackLength
+            );
+        }
+
+        // Facing down
+        return new Rectangle(
+            x - attackWidth / 2f,
+            attackCenterY - bodyHalfWidth - attackLength,
+            attackWidth,
+            attackLength
+        );
+    }
+
+    public boolean canDealAttackDamage() {
+        return attacking && !attackHitRegistered;
+    }
+
+    public void registerAttackHit() {
+        attackHitRegistered = true;
     }
 
     public void dispose() {
