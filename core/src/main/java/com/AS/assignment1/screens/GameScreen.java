@@ -6,6 +6,7 @@ import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
 import com.AS.assignment1.world.CollisionManager;
 import com.AS.assignment1.world.LevelManager;
+import com.AS.assignment1.world.MapTransitionManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -36,8 +37,9 @@ public class GameScreen extends BaseScreen {
     private Player player;
     private EnemyManager enemyManager;
     private CollisionManager collisionManager;
-    private LevelManager levelManager;
+    private MapTransitionManager mapTransitionManager;
     private String currentMapPath;
+
     public GameScreen(Main game) {
         super(game);
 
@@ -45,10 +47,16 @@ public class GameScreen extends BaseScreen {
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
 
+        buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
+        attackButtonTexture = new Texture("Buttons/attack.png");
+        loadButtonRegions();
+
+        attackSoundPlayed = false;
+
         setupButtons();
         setupMapCamera();
 
-        loadMap("maps/level1.tmx", "player");
+        loadMap(game.getLevelManager().getCurrentMapPath(), "player");
     }
 
     private void setupButtons() {
@@ -116,7 +124,7 @@ public class GameScreen extends BaseScreen {
             tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
             collisionManager = new CollisionManager(tiledMap);
-            levelManager = new LevelManager(tiledMap);
+            mapTransitionManager = new MapTransitionManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -175,7 +183,7 @@ public class GameScreen extends BaseScreen {
         }
 
         collisionManager = null;
-        levelManager = null;
+        mapTransitionManager = null;
     }
 
     private boolean update(float deltaTime) {
@@ -219,13 +227,22 @@ public class GameScreen extends BaseScreen {
             return false;
         }
 
-        if (levelManager != null && player != null) {
-            LevelManager.TransitionResult transition = levelManager.checkTransition(player.getBounds());
+        if (mapTransitionManager != null && player != null) {
+            MapTransitionManager.TransitionResult transition =
+                mapTransitionManager.checkTransition(player.getBounds());
 
             if (transition != null) {
                 if ("WIN".equals(transition.getTargetMap())) {
                     game.showWinScreen();
                     return false;
+                }
+
+                if ("maps/level2.tmx".equals(transition.getTargetMap())) {
+                    game.getLevelManager().unlockLevel(2);
+                }
+
+                if ("maps/level3.tmx".equals(transition.getTargetMap())) {
+                    game.getLevelManager().unlockLevel(3);
                 }
 
                 loadMap(transition.getTargetMap(), transition.getTargetSpawn());
