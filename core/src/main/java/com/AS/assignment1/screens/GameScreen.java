@@ -8,10 +8,10 @@ import com.AS.assignment1.world.CollisionManager;
 import com.AS.assignment1.world.LevelManager;
 import com.AS.assignment1.world.MapTransitionManager;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -23,12 +23,24 @@ public class GameScreen extends BaseScreen {
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
 
+    private Texture buttonSheetTexture;
+    private Texture attackButtonTexture;
+
+    private TextureRegion upButtonRegion;
+    private TextureRegion downButtonRegion;
+    private TextureRegion leftButtonRegion;
+    private TextureRegion rightButtonRegion;
+
     private Rectangle menuButton;
     private Rectangle upButton;
     private Rectangle downButton;
     private Rectangle leftButton;
     private Rectangle rightButton;
     private Rectangle attackButton;
+
+    private int startTileCol = 2;
+    private int startTileRow = 2;
+    private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
     private IsometricTiledMapRenderer mapRenderer;
@@ -107,6 +119,15 @@ public class GameScreen extends BaseScreen {
             screenHeight * 0.13f,
             screenHeight * 0.13f
         );
+    }
+
+    private void loadButtonRegions() {
+        TextureRegion[][] buttons = TextureRegion.split(buttonSheetTexture, 16, 16);
+
+        upButtonRegion = buttons[1][6];
+        downButtonRegion = buttons[1][5];
+        leftButtonRegion = buttons[0][5];
+        rightButtonRegion = buttons[0][6];
     }
 
     private void setupMapCamera() {
@@ -196,9 +217,21 @@ public class GameScreen extends BaseScreen {
             touchY = screenHeight - Gdx.input.getY();
 
             if (menuButton.contains(touchX, touchY)) {
+                game.getSoundManager().playClick();
                 game.showMenuScreen();
                 return false;
             }
+
+            if (attackButton.contains(touchX, touchY)) {
+                if (!attackSoundPlayed) {
+                    game.getSoundManager().playAttack();
+                    attackSoundPlayed = true;
+                }
+            } else {
+                attackSoundPlayed = false;
+            }
+        } else {
+            attackSoundPlayed = false;
         }
 
         if (player != null) {
@@ -345,23 +378,40 @@ public class GameScreen extends BaseScreen {
     }
 
     private void drawControlButtons() {
-        drawButtonBox(upButton, "^");
-        drawButtonBox(downButton, "v");
-        drawButtonBox(leftButton, "<");
-        drawButtonBox(rightButton, ">");
-        drawButtonBox(attackButton, "ATK");
+        drawImageButton(upButton, upButtonRegion);
+        drawImageButton(downButton, downButtonRegion);
+        drawImageButton(leftButton, leftButtonRegion);
+        drawImageButton(rightButton, rightButtonRegion);
+
+        drawTextureButton(attackButton, attackButtonTexture);
     }
 
-    private void drawButtonBox(Rectangle button, String text) {
-        game.batch.draw(darkBoxTexture, button.x, button.y, button.width, button.height);
+    private void drawImageButton(Rectangle button, TextureRegion region) {
+        if (region == null) {
+            return;
+        }
 
-        layout.setText(smallFont, text);
+        game.batch.draw(
+            region,
+            button.x,
+            button.y,
+            button.width,
+            button.height
+        );
+    }
 
-        float textX = button.x + (button.width - layout.width) / 2f;
-        float textY = button.y + (button.height + layout.height) / 2f;
+    private void drawTextureButton(Rectangle button, Texture texture) {
+        if (texture == null) {
+            return;
+        }
 
-        smallFont.setColor(Color.WHITE);
-        smallFont.draw(game.batch, text, textX, textY);
+        game.batch.draw(
+            texture,
+            button.x,
+            button.y,
+            button.width,
+            button.height
+        );
     }
 
     @Override
@@ -384,6 +434,11 @@ public class GameScreen extends BaseScreen {
         backgroundTexture.dispose();
         menuButtonTexture.dispose();
         heartFullTexture.dispose();
+        buttonSheetTexture.dispose();
+
+        if (attackButtonTexture != null) {
+            attackButtonTexture.dispose();
+        }
 
         disposeCurrentLevel();
 

@@ -1,11 +1,17 @@
 package com.AS.assignment1;
 
-//import com.AS.assignment1.screens.CreditScreen;
 import com.AS.assignment1.screens.DeathScreen;
+import com.AS.assignment1.screens.CreditScreen;
+// import com.AS.assignment1.screens.DeathScreen;
 import com.AS.assignment1.screens.GameScreen;
-//import com.AS.assignment1.screens.HelpScreen;
+import com.AS.assignment1.screens.HelpScreen;
+import com.AS.assignment1.screens.LevelSelectScreen;
 import com.AS.assignment1.screens.MenuScreen;
 import com.AS.assignment1.screens.WinScreen;
+
+import com.AS.assignment1.world.LevelManager;
+import com.AS.assignment1.world.SoundManager;
+
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -14,9 +20,15 @@ import com.badlogic.gdx.Gdx;
 public class Main extends Game {
     public SpriteBatch batch;
 
+    private LevelManager levelManager;
+    private SoundManager soundManager;
+
     @Override
     public void create() {
         batch = new SpriteBatch();
+        soundManager = new SoundManager();
+        levelManager = new LevelManager();
+
         showMenuScreen();
     }
 
@@ -39,13 +51,17 @@ public class Main extends Game {
         changeScreen(new MenuScreen(this));
     }
 
-//    public void showHelpScreen() {
-//        changeScreen(new HelpScreen(this));
-//    }
+    public void showLevelSelectScreen() {
+        changeScreen(new LevelSelectScreen(this));
+    }
 
-//    public void showCreditScreen() {
-//        changeScreen(new CreditScreen(this));
-//    }
+    public void showHelpScreen() {
+        changeScreen(new HelpScreen(this));
+    }
+
+    public void showCreditScreen() {
+        changeScreen(new CreditScreen(this));
+    }
 
     public void showGameScreen() {
         changeScreen(new GameScreen(this));
@@ -57,6 +73,14 @@ public class Main extends Game {
 
     public void showWinScreen() {
         changeScreen(new WinScreen(this));
+    }
+    public LevelManager getLevelManager() {
+        return levelManager;
+    }
+
+
+    public SoundManager getSoundManager() {
+        return soundManager;
     }
 
     @Override
@@ -70,6 +94,11 @@ public class Main extends Game {
             getScreen().dispose();
         }
 
-        batch.dispose();
+        if (batch != null) {
+            batch.dispose();
+        }
+        if (soundManager != null) {
+            soundManager.dispose();
+        }
     }
 }

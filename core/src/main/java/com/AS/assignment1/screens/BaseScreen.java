@@ -1,8 +1,7 @@
 package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -10,7 +9,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 
-public abstract class BaseScreen extends ScreenAdapter {
+public abstract class BaseScreen implements Screen {
+
     protected Main game;
 
     protected OrthographicCamera uiCamera;
@@ -18,7 +18,6 @@ public abstract class BaseScreen extends ScreenAdapter {
     protected BitmapFont titleFont;
     protected BitmapFont smallFont;
     protected GlyphLayout layout;
-
     protected Texture darkBoxTexture;
 
     protected float screenWidth;
@@ -27,8 +26,8 @@ public abstract class BaseScreen extends ScreenAdapter {
     public BaseScreen(Main game) {
         this.game = game;
 
-        screenWidth = Gdx.graphics.getWidth();
-        screenHeight = Gdx.graphics.getHeight();
+        screenWidth = com.badlogic.gdx.Gdx.graphics.getWidth();
+        screenHeight = com.badlogic.gdx.Gdx.graphics.getHeight();
 
         uiCamera = new OrthographicCamera();
         uiCamera.setToOrtho(false, screenWidth, screenHeight);
@@ -80,6 +79,22 @@ public abstract class BaseScreen extends ScreenAdapter {
 
         uiCamera.setToOrtho(false, screenWidth, screenHeight);
         uiCamera.update();
+    }
+
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+    @Override
+    public void hide() {
+    }
+
+    @Override
+    public void show() {
     }
 
     @Override
