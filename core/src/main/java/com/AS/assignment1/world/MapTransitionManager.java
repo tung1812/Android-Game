@@ -5,7 +5,6 @@ import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 
 public class MapTransitionManager {
     private final TiledMap map;
@@ -20,67 +19,82 @@ public class MapTransitionManager {
 
     public TransitionResult checkTransition(Rectangle playerBounds) {
         if (map == null) {
-            Gdx.app.log("LEVEL", "Map is null");
             return null;
         }
 
         MapLayer interactablesLayer = map.getLayers().get("Interactables");
 
         if (interactablesLayer == null) {
-            Gdx.app.log("LEVEL", "No Interactables layer found");
             return null;
         }
 
+        int playerTileCol = getTileColFromWorld(playerBounds);
+        int playerTileRow = getTileRowFromWorld(playerBounds);
+
         for (MapObject object : interactablesLayer.getObjects()) {
-            if (!object.getProperties().containsKey("tileCol") ||
-                !object.getProperties().containsKey("tileRow")) {
-                Gdx.app.log("LEVEL", "Missing tileCol/tileRow on object: " + object.getName());
+            if (object == null) {
                 continue;
             }
 
-            int tileCol = getIntProperty(object, "tileCol");
-            int tileRow = getIntProperty(object, "tileRow");
+            if (!object.getProperties().containsKey("tileCol")
+                || !object.getProperties().containsKey("tileRow")) {
 
-            Vector2 worldPosition = tileToWorld(tileCol, tileRow);
+                Gdx.app.log(
+                    "LEVEL",
+                    "Missing tileCol/tileRow on object: " + object.getName()
+                );
+                continue;
+            }
 
-            Rectangle triggerBounds = new Rectangle(
-                worldPosition.x - 48f,
-                worldPosition.y - 32f,
-                96f,
-                64f
-            );
+            int targetTileCol = getIntProperty(object, "tileCol");
+            int targetTileRow = getIntProperty(object, "tileRow");
 
             String targetMap = getStringProperty(object, "targetMap", "");
             String targetSpawn = getStringProperty(object, "targetSpawn", "player");
 
             Gdx.app.log(
                 "LEVEL",
-                "Checking " + object.getName()
-                    + " tileCol=" + tileCol
-                    + " tileRow=" + tileRow
+                "Checking "
+                    + object.getName()
+                    + " targetTile=(" + targetTileCol + "," + targetTileRow + ")"
+                    + " playerTile=(" + playerTileCol + "," + playerTileRow + ")"
                     + " targetMap=" + targetMap
-                    + " trigger=" + triggerBounds
-                    + " player=" + playerBounds
             );
 
-            if (playerBounds.overlaps(triggerBounds)) {
+            int tileRange = 1;
+
+            boolean isNearTarget =
+                Math.abs(playerTileCol - targetTileCol) <= tileRange
+                    && Math.abs(playerTileRow - targetTileRow) <= tileRange;
+
+            if (isNearTarget) {
                 if (targetMap.length() > 0) {
                     Gdx.app.log("LEVEL", "Transition to " + targetMap);
                     return new TransitionResult(targetMap, targetSpawn);
                 }
 
-                Gdx.app.log("LEVEL", "targetMap is empty on object: " + object.getName());
+                Gdx.app.log(
+                    "LEVEL",
+                    "targetMap is empty on object: " + object.getName()
+                );
             }
         }
 
         return null;
     }
 
-    private Vector2 tileToWorld(int tileCol, int tileRow) {
-        float worldX = (tileCol + tileRow) * tileWidth / 2f;
-        float worldY = (tileRow - tileCol) * tileHeight / 2f;
+    private int getTileColFromWorld(Rectangle playerBounds) {
+        float centerX = playerBounds.x + playerBounds.width / 2f;
+        float centerY = playerBounds.y + playerBounds.height / 2f;
 
-        return new Vector2(worldX, worldY);
+        return Math.round(centerX / tileWidth - centerY / tileHeight);
+    }
+
+    private int getTileRowFromWorld(Rectangle playerBounds) {
+        float centerX = playerBounds.x + playerBounds.width / 2f;
+        float centerY = playerBounds.y + playerBounds.height / 2f;
+
+        return Math.round(centerX / tileWidth + centerY / tileHeight);
     }
 
     private int getIntProperty(MapObject object, String propertyName) {
@@ -100,6 +114,10 @@ public class MapTransitionManager {
 
         if (value instanceof Double) {
             return (int) Math.round((Double) value);
+        }
+
+        if (value instanceof String) {
+            return Math.round(Float.parseFloat((String) value));
         }
 
         return Math.round(Float.parseFloat(value.toString()));

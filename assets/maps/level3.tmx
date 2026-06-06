@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="left-down" width="50" height="50" tilewidth="32" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="21">
-<tileset firstgid="1" source="tileset.tsx"/>
+<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="left-down" width="50" height="50" tilewidth="32" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="25">
+ <tileset firstgid="1" source="tileset.tsx"/>
  <layer id="1" name="Tile Layer 1" width="50" height="50">
   <data encoding="csv">
 25,25,25,25,25,25,25,25,25,25,25,25,64,64,36,36,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,62,62,62,62,62,25,25,25,113,113,111,111,111,111,113,
@@ -65,15 +65,16 @@
  </objectgroup>
  <objectgroup id="6" name="Interactables">
   <properties>
-   <property name="targetMap" value="maps/level3.tmx"/>
+   <property name="targetMap" value="WIN"/>
    <property name="targetSpawn" value="player"/>
   </properties>
-  <object id="17" name="tele level 3" x="365" y="49" width="106" height="72">
+  <object id="17" name="tele level 3" x="379.167" y="79.8333" width="16.3333" height="15.3333">
    <properties>
-    <property name="targetMap" value="maps/level3.tmx"/>
+    <property name="targetMap" value="WIN"/>
     <property name="targetSpawn" value="player"/>
+    <property name="tileCol" value="26"/>
+    <property name="tileRow" value="6"/>
    </properties>
   </object>
-  <object id="19" x="-54.5" y="-195.5"/>
  </objectgroup>
 </map>

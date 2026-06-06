@@ -20,6 +20,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends BaseScreen {
 
@@ -145,7 +146,7 @@ public class GameScreen extends BaseScreen {
     private void setupMapCamera() {
         mapCamera = new OrthographicCamera();
         mapCamera.setToOrtho(false, screenWidth, screenHeight);
-        mapCamera.zoom = 0.55f;
+        mapCamera.zoom = 0.35f;
         mapCamera.update();
     }
 
@@ -154,12 +155,7 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
-        mapCamera.position.set(
-            player.getX(),
-            player.getY(),
-            0
-        );
-
+        mapCamera.position.set(player.getX(), player.getY(), 0);
         mapCamera.zoom = 0.35f;
         mapCamera.update();
     }
@@ -189,7 +185,6 @@ public class GameScreen extends BaseScreen {
             SpawnManager spawnManager = new SpawnManager(tiledMap);
 
             Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, fallbackX, fallbackY);
-            Vector2 enemySpawn = spawnManager.getSpawnPoint("enemy1", playerSpawn.x + 200f, playerSpawn.y);
 
             if (player == null) {
                 player = new Player(playerSpawn.x, playerSpawn.y);
@@ -198,13 +193,23 @@ public class GameScreen extends BaseScreen {
             }
 
             enemyManager = new EnemyManager();
-            enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+
+            Array<Vector2> enemySpawns = spawnManager.getSpawnPointsByPrefix("enemy");
+
+            for (Vector2 enemySpawn : enemySpawns) {
+                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+
+                Gdx.app.log(
+                    "SPAWN",
+                    "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y
+                );
+            }
 
             focusCameraOnPlayer();
 
             Gdx.app.log("MAP", "Loaded map: " + mapPath);
             Gdx.app.log("SPAWN", "Player spawn: " + playerSpawn.x + ", " + playerSpawn.y);
-            Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
+            Gdx.app.log("SPAWN", "Total enemies: " + enemySpawns.size);
 
         } catch (Exception e) {
             Gdx.app.error("MAP", "Failed to load map: " + mapPath, e);
@@ -301,10 +306,12 @@ public class GameScreen extends BaseScreen {
 
                 if ("maps/level2.tmx".equals(transition.getTargetMap())) {
                     game.getLevelManager().unlockLevel(2);
+                    game.getLevelManager().setSelectedLevel(2);
                 }
 
                 if ("maps/level3.tmx".equals(transition.getTargetMap())) {
                     game.getLevelManager().unlockLevel(3);
+                    game.getLevelManager().setSelectedLevel(3);
                 }
 
                 loadMap(transition.getTargetMap(), transition.getTargetSpawn());
