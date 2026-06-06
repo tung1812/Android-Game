@@ -2,7 +2,7 @@ package com.AS.assignment1;
 
 import com.AS.assignment1.screens.DeathScreen;
 import com.AS.assignment1.screens.CreditScreen;
-// import com.AS.assignment1.screens.DeathScreen;
+import com.AS.assignment1.screens.DeathScreen;
 import com.AS.assignment1.screens.GameScreen;
 import com.AS.assignment1.screens.HelpScreen;
 import com.AS.assignment1.screens.LevelSelectScreen;
@@ -16,18 +16,22 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.Gdx;
+import com.AS.assignment1.world.BGMManager;
 
 public class Main extends Game {
     public SpriteBatch batch;
 
     private LevelManager levelManager;
     private SoundManager soundManager;
+    private BGMManager bgmManager;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
         soundManager = new SoundManager();
         levelManager = new LevelManager();
+        bgmManager = new BGMManager();
+        bgmManager.play();
 
         showMenuScreen();
     }
@@ -82,6 +86,9 @@ public class Main extends Game {
     public SoundManager getSoundManager() {
         return soundManager;
     }
+    public BGMManager getBgmManager() {
+        return bgmManager;
+    }
 
     @Override
     public void render() {
@@ -99,6 +106,9 @@ public class Main extends Game {
         }
         if (soundManager != null) {
             soundManager.dispose();
+        }
+        if (bgmManager != null) {
+            bgmManager.dispose();
         }
     }
 }
