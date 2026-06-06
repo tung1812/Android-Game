@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="isometric" renderorder="left-down" width="30" height="30" tilewidth="32" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="8">
+<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="left-down" width="30" height="30" tilewidth="32" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="8">
  <tileset firstgid="1" source="tileset.tsx"/>
  <layer id="1" name="Tile Layer 1" width="30" height="30">
   <data encoding="csv">
@@ -36,7 +36,7 @@
 </data>
  </layer>
  <objectgroup id="4" name="Interactables">
-  <object id="7" name="stairsToLevel2" gid="80" x="436.333" y="266.333" width="32" height="32">
+  <object id="7" name="stairsToLevel2" gid="80" x="446.333" y="204.333" width="32" height="32">
    <properties>
     <property name="targetMap" value="maps/level2.tmx"/>
     <property name="targetSpawn" value="player"/>

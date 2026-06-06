@@ -19,15 +19,22 @@ public class MapTransitionManager {
     }
 
     public TransitionResult checkTransition(Rectangle playerBounds) {
-        if (map == null || map.getLayers().get("Interactables") == null) {
+        if (map == null) {
+            Gdx.app.log("LEVEL", "Map is null");
             return null;
         }
 
         MapLayer interactablesLayer = map.getLayers().get("Interactables");
 
+        if (interactablesLayer == null) {
+            Gdx.app.log("LEVEL", "No Interactables layer found");
+            return null;
+        }
+
         for (MapObject object : interactablesLayer.getObjects()) {
             if (!object.getProperties().containsKey("tileCol") ||
                 !object.getProperties().containsKey("tileRow")) {
+                Gdx.app.log("LEVEL", "Missing tileCol/tileRow on object: " + object.getName());
                 continue;
             }
 
@@ -37,20 +44,32 @@ public class MapTransitionManager {
             Vector2 worldPosition = tileToWorld(tileCol, tileRow);
 
             Rectangle triggerBounds = new Rectangle(
-                worldPosition.x - 24f,
-                worldPosition.y - 12f,
-                48f,
-                32f
+                worldPosition.x - 48f,
+                worldPosition.y - 32f,
+                96f,
+                64f
+            );
+
+            String targetMap = getStringProperty(object, "targetMap", "");
+            String targetSpawn = getStringProperty(object, "targetSpawn", "player");
+
+            Gdx.app.log(
+                "LEVEL",
+                "Checking " + object.getName()
+                    + " tileCol=" + tileCol
+                    + " tileRow=" + tileRow
+                    + " targetMap=" + targetMap
+                    + " trigger=" + triggerBounds
+                    + " player=" + playerBounds
             );
 
             if (playerBounds.overlaps(triggerBounds)) {
-                String targetMap = getStringProperty(object, "targetMap", "");
-                String targetSpawn = getStringProperty(object, "targetSpawn", "player");
-
                 if (targetMap.length() > 0) {
                     Gdx.app.log("LEVEL", "Transition to " + targetMap);
                     return new TransitionResult(targetMap, targetSpawn);
                 }
+
+                Gdx.app.log("LEVEL", "targetMap is empty on object: " + object.getName());
             }
         }
 
