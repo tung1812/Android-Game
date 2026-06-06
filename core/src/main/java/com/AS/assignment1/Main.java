@@ -5,7 +5,7 @@ import com.AS.assignment1.screens.DeathScreen;
 import com.AS.assignment1.screens.GameScreen;
 //import com.AS.assignment1.screens.HelpScreen;
 import com.AS.assignment1.screens.MenuScreen;
-//import com.AS.assignment1.screens.WinScreen;
+import com.AS.assignment1.screens.WinScreen;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -55,9 +55,9 @@ public class Main extends Game {
         changeScreen(new DeathScreen(this));
     }
 
-//    public void showWinScreen() {
-//        changeScreen(new WinScreen(this));
-//    }
+    public void showWinScreen() {
+        changeScreen(new WinScreen(this));
+    }
 
     @Override
     public void render() {

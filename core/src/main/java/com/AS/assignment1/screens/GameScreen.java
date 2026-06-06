@@ -223,6 +223,11 @@ public class GameScreen extends BaseScreen {
             LevelManager.TransitionResult transition = levelManager.checkTransition(player.getBounds());
 
             if (transition != null) {
+                if ("WIN".equals(transition.getTargetMap())) {
+                    game.showWinScreen();
+                    return false;
+                }
+
                 loadMap(transition.getTargetMap(), transition.getTargetSpawn());
                 return true;
             }
