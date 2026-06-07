@@ -46,15 +46,30 @@ public class MapTransitionManager {
             if (playerBounds.overlaps(triggerBounds)) {
                 String targetMap = getStringProperty(object, "targetMap", "");
                 String targetSpawn = getStringProperty(object, "targetSpawn", "player");
+                boolean requiresKey = getBooleanProperty(object, "requiresKey", false);
 
                 if (targetMap.length() > 0) {
                     Gdx.app.log("LEVEL", "Transition to " + targetMap);
-                    return new TransitionResult(targetMap, targetSpawn);
+                    return new TransitionResult(targetMap, targetSpawn, requiresKey);
                 }
             }
         }
 
         return null;
+    }
+
+    private boolean getBooleanProperty(MapObject object, String propertyName, boolean fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        return Boolean.parseBoolean(value.toString());
     }
 
     private Vector2 tileToWorld(int tileCol, int tileRow) {
@@ -99,10 +114,12 @@ public class MapTransitionManager {
     public static class TransitionResult {
         private final String targetMap;
         private final String targetSpawn;
+        private final boolean requiresKey;
 
-        public TransitionResult(String targetMap, String targetSpawn) {
+        public TransitionResult(String targetMap, String targetSpawn, boolean requiresKey) {
             this.targetMap = targetMap;
             this.targetSpawn = targetSpawn;
+            this.requiresKey = requiresKey;
         }
 
         public String getTargetMap() {
@@ -111,6 +128,10 @@ public class MapTransitionManager {
 
         public String getTargetSpawn() {
             return targetSpawn;
+        }
+
+        public boolean requiresKey() {
+            return requiresKey;
         }
     }
 }

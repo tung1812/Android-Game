@@ -46,6 +46,10 @@ public class CollisionManager {
         return collisionLayer.getCell(tileCol, tileRow) != null;
     }
 
+    public Vector2 getTileAtWorld(float worldX, float worldY) {
+        return worldToTile(worldX, worldY);
+    }
+
     private Vector2 worldToTile(float worldX, float worldY) {
         float halfTileWidth = tileWidth / 2f;
         float halfTileHeight = tileHeight / 2f;

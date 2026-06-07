@@ -7,6 +7,7 @@ import com.AS.assignment1.entities.EnemyManager;
 import com.AS.assignment1.world.CollisionManager;
 import com.AS.assignment1.world.LevelManager;
 import com.AS.assignment1.world.MapTransitionManager;
+import com.AS.assignment1.world.PuzzleManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -38,8 +39,6 @@ public class GameScreen extends BaseScreen {
     private Rectangle rightButton;
     private Rectangle attackButton;
 
-    private int startTileCol = 2;
-    private int startTileRow = 2;
     private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
@@ -50,6 +49,7 @@ public class GameScreen extends BaseScreen {
     private EnemyManager enemyManager;
     private CollisionManager collisionManager;
     private MapTransitionManager mapTransitionManager;
+    private PuzzleManager puzzleManager;
     private String currentMapPath;
 
     public GameScreen(Main game) {
@@ -146,6 +146,7 @@ public class GameScreen extends BaseScreen {
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
             collisionManager = new CollisionManager(tiledMap);
             mapTransitionManager = new MapTransitionManager(tiledMap);
+            puzzleManager = new PuzzleManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -205,6 +206,7 @@ public class GameScreen extends BaseScreen {
 
         collisionManager = null;
         mapTransitionManager = null;
+        puzzleManager = null;
     }
 
     private boolean update(float deltaTime) {
@@ -260,11 +262,22 @@ public class GameScreen extends BaseScreen {
             return false;
         }
 
+        if (puzzleManager != null && player != null) {
+            puzzleManager.update(player.getX(), player.getY());
+        }
+
         if (mapTransitionManager != null && player != null) {
             MapTransitionManager.TransitionResult transition =
                 mapTransitionManager.checkTransition(player.getBounds());
 
             if (transition != null) {
+                if (transition.requiresKey() &&
+                    (puzzleManager == null || !puzzleManager.hasKey())) {
+
+                    Gdx.app.log("PUZZLE", "This exit requires a key.");
+                    return true;
+                }
+
                 if ("WIN".equals(transition.getTargetMap())) {
                     game.showWinScreen();
                     return false;
@@ -332,12 +345,64 @@ public class GameScreen extends BaseScreen {
         drawHealthBar();
         drawControlButtons();
 
-        drawBoldTextWithBox(titleFont, "LEVEL 1", screenHeight * 0.92f, 45, 22);
+        drawBoldTextWithBox(
+            titleFont,
+            "LEVEL " + getLevelNumberFromPath(),
+            screenHeight * 0.92f,
+            45,
+            22
+        );
+
+        if (puzzleManager != null) {
+            String keyText = puzzleManager.hasKey() ? "Key: Collected" : "Key: Missing";
+
+            drawBoldTextWithBox(
+                smallFont,
+                keyText,
+                screenHeight * 0.82f,
+                30,
+                14
+            );
+        }
+
+        if (collisionManager != null && player != null) {
+            Vector2 playerTile = collisionManager.getTileAtWorld(player.getX(), player.getY());
+
+            String tileText =
+                "Tile: "
+                    + (int) Math.floor(playerTile.x)
+                    + ", "
+                    + (int) Math.floor(playerTile.y);
+
+            drawBoldTextWithBox(
+                smallFont,
+                tileText,
+                screenHeight * 0.72f,
+                30,
+                14
+            );
+        }
+
         drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
 
         game.batch.end();
     }
 
+    private int getLevelNumberFromPath() {
+        if (currentMapPath == null) {
+            return game.getLevelManager().getSelectedLevel();
+        }
+
+        if (currentMapPath.contains("level2")) {
+            return 2;
+        }
+
+        if (currentMapPath.contains("level3")) {
+            return 3;
+        }
+
+        return 1;
+    }
     private void drawMapError() {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
