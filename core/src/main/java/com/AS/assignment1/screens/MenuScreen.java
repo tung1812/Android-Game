@@ -9,7 +9,7 @@ import com.badlogic.gdx.math.Rectangle;
 public class MenuScreen extends BaseScreen {
     private Texture backgroundTexture;
     private Texture startButtonTexture;
-    private Texture optionButtonTexture;
+    private Texture helpButtonTexture;
     private Texture creditButtonTexture;
     private Texture quitButtonTexture;
 
@@ -18,7 +18,7 @@ public class MenuScreen extends BaseScreen {
     private Texture decreaseButtonTexture;
 
     private Rectangle startButton;
-    private Rectangle optionButton;
+    private Rectangle helpButton;
     private Rectangle creditButton;
     private Rectangle quitButton;
 
@@ -33,7 +33,7 @@ public class MenuScreen extends BaseScreen {
 
         backgroundTexture = new Texture("background.jpg");
         startButtonTexture = new Texture("Menu/start.png");
-        optionButtonTexture = new Texture("Menu/option.png");
+        helpButtonTexture = new Texture("Menu/help.png");
         creditButtonTexture = new Texture("Menu/credit.png");
         quitButtonTexture = new Texture("Menu/quit.png");
 
@@ -52,14 +52,13 @@ public class MenuScreen extends BaseScreen {
         float buttonX = (screenWidth - buttonWidth) / 2f;
 
         startButton = new Rectangle(buttonX, screenHeight * 0.58f, buttonWidth, buttonHeight);
-        optionButton = new Rectangle(buttonX, screenHeight * 0.44f, buttonWidth, buttonHeight);
+        helpButton = new Rectangle(buttonX, screenHeight * 0.44f, buttonWidth, buttonHeight);
         creditButton = new Rectangle(buttonX, screenHeight * 0.30f, buttonWidth, buttonHeight);
         quitButton = new Rectangle(buttonX, screenHeight * 0.16f, buttonWidth, buttonHeight);
 
         float iconSize = screenHeight * 0.12f;
         float margin = screenWidth * 0.04f;
 
-        // Volume button outside Option screen, on the main menu top-right.
         volumeButton = new Rectangle(
             screenWidth - margin - iconSize,
             screenHeight * 0.82f,
@@ -111,7 +110,7 @@ public class MenuScreen extends BaseScreen {
         if (startButton.contains(touchX, touchY)) {
             game.getSoundManager().playClick();
             game.showLevelSelectScreen();
-        } else if (optionButton.contains(touchX, touchY)) {
+        } else if (helpButton.contains(touchX, touchY)) {
             game.getSoundManager().playClick();
             game.showHelpScreen();
         } else if (creditButton.contains(touchX, touchY)) {
@@ -143,10 +142,10 @@ public class MenuScreen extends BaseScreen {
             return;
         }
 
-        drawBoldTextWithBox(titleFont, "Assignment 2 RPG Games", screenHeight * 0.86f, 45, 22);
+        drawBoldTextWithBox(titleFont, "Reiko Adventures Time", screenHeight * 0.86f, 45, 22);
 
         game.batch.draw(startButtonTexture, startButton.x, startButton.y, startButton.width, startButton.height);
-        game.batch.draw(optionButtonTexture, optionButton.x, optionButton.y, optionButton.width, optionButton.height);
+        game.batch.draw(helpButtonTexture, helpButton.x, helpButton.y, helpButton.width, helpButton.height);
         game.batch.draw(creditButtonTexture, creditButton.x, creditButton.y, creditButton.width, creditButton.height);
         game.batch.draw(quitButtonTexture, quitButton.x, quitButton.y, quitButton.width, quitButton.height);
 
@@ -209,7 +208,7 @@ public class MenuScreen extends BaseScreen {
 
         backgroundTexture.dispose();
         startButtonTexture.dispose();
-        optionButtonTexture.dispose();
+        helpButtonTexture.dispose();
         creditButtonTexture.dispose();
         quitButtonTexture.dispose();
 

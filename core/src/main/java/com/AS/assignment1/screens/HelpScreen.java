@@ -56,7 +56,7 @@ public class HelpScreen extends BaseScreen {
         game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
-        drawBoldTextWithBox(titleFont, "Option", screenHeight * 0.78f, 45, 22);
+        drawBoldTextWithBox(titleFont, "Help", screenHeight * 0.78f, 45, 22);
         drawBoldTextWithBox(smallFont, "Use screen buttons to move", screenHeight * 0.60f, 35, 18);
         drawBoldTextWithBox(smallFont, "Tap ATK to attack", screenHeight * 0.50f, 35, 18);
         drawBoldTextWithBox(smallFont, "Avoid enemies and explore the map", screenHeight * 0.40f, 35, 18);

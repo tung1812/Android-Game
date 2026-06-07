@@ -56,12 +56,19 @@ public class CreditScreen extends BaseScreen {
         game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
-        drawBoldTextWithBox(titleFont, "Credit", screenHeight * 0.78f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Game created by", screenHeight * 0.60f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Gia Minh Pham and Son Tung Nguyen", screenHeight * 0.50f, 35, 18);
-        drawBoldTextWithBox(smallFont, "2D Isometric RPG Adventure Game", screenHeight * 0.40f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.30f, 35, 18);
+        drawBoldTextWithBox(titleFont, "CREDITS", screenHeight * 0.88f, 45, 22);
 
+        drawBoldTextWithBox(smallFont, "Game Developer: Gia Minh Pham and Son Tung Nguyen", screenHeight * 0.78f, 27, 12);
+        drawBoldTextWithBox(smallFont, "Engine: LibGDX | Tools: Tiled, Android Studio", screenHeight * 0.71f, 27, 12);
+
+        drawBoldTextWithBox(smallFont, "Player Character: Reiko by Gl Studio", screenHeight * 0.62f, 27, 12);
+        drawBoldTextWithBox(smallFont, "Map Tileset: 32 x 32 Pixel Isometric Tiles by scrabling", screenHeight * 0.55f, 27, 12);
+        drawBoldTextWithBox(smallFont, "Enemy Sprites: Someone", screenHeight * 0.39f, 27, 12);
+        drawBoldTextWithBox(smallFont, "UI Assets: Pixel Explosive / @PixelExplosive. SlyFoxStudios", screenHeight * 0.32f, 27, 12);
+        drawBoldTextWithBox(smallFont, "Background Images: suttersock", screenHeight * 0.25f, 27, 12);
+
+        drawBoldTextWithBox(smallFont, "BGM: JDSherbert", screenHeight * 0.16f, 27, 12);
+        drawBoldTextWithBox(smallFont, "SFX: Helton Yan | Beto Bezerra", screenHeight * 0.09f, 27, 12);
         game.batch.end();
     }
 
