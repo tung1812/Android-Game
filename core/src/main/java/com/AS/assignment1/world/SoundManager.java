@@ -9,6 +9,11 @@ public class SoundManager {
     private Sound clickSound;
     private Sound errorSound;
     private Sound attackSound;
+    private Sound hurtSound;
+    private Sound moveSound;
+
+    private long moveSoundId;
+
     private Preferences preferences;
     private float masterVolume;
 
@@ -19,6 +24,11 @@ public class SoundManager {
         clickSound = loadSound("Sound/UI/sci_fi_select.wav");
         errorSound = loadSound("Sound/UI/sci_fi_error.wav");
         attackSound = loadSound("Sound/Weapons/sword_slice.wav");
+
+        hurtSound = loadSound("Sound/Owie.mp3");
+        moveSound = loadSound("Sound/Footsteps/grass.wav");
+
+        moveSoundId = -1;
     }
 
     private Sound loadSound(String path) {
@@ -28,6 +38,12 @@ public class SoundManager {
 
         Gdx.app.error("SOUND", "Missing sound file: " + path);
         return null;
+    }
+
+    private void play(Sound sound) {
+        if (sound != null) {
+            sound.play(masterVolume);
+        }
     }
 
     public void playClick() {
@@ -42,9 +58,24 @@ public class SoundManager {
         play(attackSound);
     }
 
-    private void play(Sound sound) {
-        if (sound != null) {
-            sound.play(masterVolume);
+    public void playHurt() {
+        play(hurtSound);
+    }
+
+    public void startMoveLoop() {
+        if (moveSound == null) {
+            return;
+        }
+
+        if (moveSoundId == -1) {
+            moveSoundId = moveSound.loop(masterVolume * 0.45f);
+        }
+    }
+
+    public void stopMoveLoop() {
+        if (moveSound != null && moveSoundId != -1) {
+            moveSound.stop(moveSoundId);
+            moveSoundId = -1;
         }
     }
 
@@ -53,6 +84,10 @@ public class SoundManager {
 
         if (masterVolume > 1.0f) {
             masterVolume = 1.0f;
+        }
+
+        if (moveSound != null && moveSoundId != -1) {
+            moveSound.setVolume(moveSoundId, masterVolume * 0.45f);
         }
 
         saveVolume();
@@ -64,6 +99,10 @@ public class SoundManager {
 
         if (masterVolume < 0.0f) {
             masterVolume = 0.0f;
+        }
+
+        if (moveSound != null && moveSoundId != -1) {
+            moveSound.setVolume(moveSoundId, masterVolume * 0.45f);
         }
 
         saveVolume();
@@ -84,6 +123,8 @@ public class SoundManager {
     }
 
     public void dispose() {
+        stopMoveLoop();
+
         if (clickSound != null) {
             clickSound.dispose();
         }
@@ -94,6 +135,14 @@ public class SoundManager {
 
         if (attackSound != null) {
             attackSound.dispose();
+        }
+
+        if (hurtSound != null) {
+            hurtSound.dispose();
+        }
+
+        if (moveSound != null) {
+            moveSound.dispose();
         }
     }
 }

@@ -1,16 +1,17 @@
 package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
-import com.AS.assignment1.entities.Player;
-import com.AS.assignment1.world.SpawnManager;
 import com.AS.assignment1.entities.EnemyManager;
+import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.world.CollisionManager;
-import com.AS.assignment1.world.LevelManager;
 import com.AS.assignment1.world.MapTransitionManager;
 import com.AS.assignment1.world.PuzzleManager;
+import com.AS.assignment1.world.SpawnManager;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapProperties;
@@ -19,8 +20,11 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.IsometricTiledMapRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
+
 public class GameScreen extends BaseScreen {
     private Texture backgroundTexture;
+    private Texture darkOverlayTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
 
@@ -50,14 +54,23 @@ public class GameScreen extends BaseScreen {
     private CollisionManager collisionManager;
     private MapTransitionManager mapTransitionManager;
     private PuzzleManager puzzleManager;
+
     private String currentMapPath;
 
     public GameScreen(Main game) {
         super(game);
 
-        backgroundTexture = new Texture("background.jpg");
+        currentMapPath = game.getLevelManager().getCurrentMapPath();
+
+        backgroundTexture = new Texture(getLevelBackgroundPath());
         menuButtonTexture = new Texture("icon/home button.png");
         heartFullTexture = new Texture("xp bars/hearts/heart/heart full.png");
+
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0f, 0f, 0f, 0.85f);
+        pixmap.fill();
+        darkOverlayTexture = new Texture(pixmap);
+        pixmap.dispose();
 
         buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
         attackButtonTexture = new Texture("Buttons/attack.png");
@@ -68,7 +81,7 @@ public class GameScreen extends BaseScreen {
         setupButtons();
         setupMapCamera();
 
-        loadMap(game.getLevelManager().getCurrentMapPath(), "player");
+        loadMap(currentMapPath, "player");
     }
 
     private void setupButtons() {
@@ -133,6 +146,17 @@ public class GameScreen extends BaseScreen {
     private void setupMapCamera() {
         mapCamera = new OrthographicCamera();
         mapCamera.setToOrtho(false, screenWidth, screenHeight);
+        mapCamera.zoom = 0.35f;
+        mapCamera.update();
+    }
+
+    private void focusCameraOnPlayer() {
+        if (mapCamera == null || player == null) {
+            return;
+        }
+
+        mapCamera.position.set(player.getX(), player.getY(), 0);
+        mapCamera.zoom = 0.35f;
         mapCamera.update();
     }
 
@@ -141,6 +165,7 @@ public class GameScreen extends BaseScreen {
             disposeCurrentLevel();
 
             currentMapPath = mapPath;
+            reloadLevelBackground();
 
             tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
@@ -154,13 +179,12 @@ public class GameScreen extends BaseScreen {
             int mapHeight = properties.get("height", Integer.class);
             int tileHeight = properties.get("tileheight", Integer.class);
 
-            float centerX = 0;
-            float centerY = (mapWidth + mapHeight) * tileHeight / 4f;
+            float fallbackX = 0;
+            float fallbackY = (mapWidth + mapHeight) * tileHeight / 4f;
 
             SpawnManager spawnManager = new SpawnManager(tiledMap);
 
-            Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, centerX, centerY);
-            Vector2 enemySpawn = spawnManager.getSpawnPoint("enemy1", playerSpawn.x + 200f, playerSpawn.y);
+            Vector2 playerSpawn = spawnManager.getSpawnPoint(spawnName, fallbackX, fallbackY);
 
             if (player == null) {
                 player = new Player(playerSpawn.x, playerSpawn.y);
@@ -169,21 +193,28 @@ public class GameScreen extends BaseScreen {
             }
 
             enemyManager = new EnemyManager();
-            enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+            Array<Vector2> enemySpawns = spawnManager.getSpawnPointsByPrefix("enemy");
 
-            mapCamera.position.set(player.getX(), player.getY(), 0);
-            mapCamera.zoom = 1.0f;
-            mapCamera.update();
+            for (Vector2 enemySpawn : enemySpawns) {
+                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+                Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
+            }
+
+            focusCameraOnPlayer();
 
             Gdx.app.log("MAP", "Loaded map: " + mapPath);
             Gdx.app.log("SPAWN", "Player spawn: " + playerSpawn.x + ", " + playerSpawn.y);
-            Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
+            Gdx.app.log("SPAWN", "Total enemies: " + enemySpawns.size);
 
         } catch (Exception e) {
             Gdx.app.error("MAP", "Failed to load map: " + mapPath, e);
 
             tiledMap = null;
             mapRenderer = null;
+            collisionManager = null;
+            mapTransitionManager = null;
+            puzzleManager = null;
+            enemyManager = null;
             player = null;
         }
     }
@@ -220,6 +251,7 @@ public class GameScreen extends BaseScreen {
 
             if (menuButton.contains(touchX, touchY)) {
                 game.getSoundManager().playClick();
+                game.getSoundManager().stopMoveLoop();
                 game.showMenuScreen();
                 return false;
             }
@@ -249,15 +281,20 @@ public class GameScreen extends BaseScreen {
                 touching,
                 collisionManager
             );
-
-
         }
 
+        updateMoveSound(touchX, touchY, touching);
+
         if (enemyManager != null) {
-            enemyManager.update(deltaTime, collisionManager, player);
+            boolean playerDamaged = enemyManager.update(deltaTime, collisionManager, player);
+
+            if (playerDamaged) {
+                game.getSoundManager().playHurt();
+            }
         }
 
         if (player != null && player.isDead()) {
+            game.getSoundManager().stopMoveLoop();
             game.showDeathScreen();
             return false;
         }
@@ -271,36 +308,58 @@ public class GameScreen extends BaseScreen {
                 mapTransitionManager.checkTransition(player.getBounds());
 
             if (transition != null) {
-                if (transition.requiresKey() &&
-                    (puzzleManager == null || !puzzleManager.hasKey())) {
-
+                if (transition.requiresKey()
+                    && (puzzleManager == null || !puzzleManager.hasKey())) {
                     Gdx.app.log("PUZZLE", "This exit requires a key.");
                     return true;
                 }
 
                 if ("WIN".equals(transition.getTargetMap())) {
+                    game.getSoundManager().stopMoveLoop();
                     game.showWinScreen();
                     return false;
                 }
 
                 if ("maps/level2.tmx".equals(transition.getTargetMap())) {
                     game.getLevelManager().unlockLevel(2);
+                    game.getLevelManager().setSelectedLevel(2);
                 }
 
                 if ("maps/level3.tmx".equals(transition.getTargetMap())) {
                     game.getLevelManager().unlockLevel(3);
+                    game.getLevelManager().setSelectedLevel(3);
                 }
 
+                game.getSoundManager().stopMoveLoop();
                 loadMap(transition.getTargetMap(), transition.getTargetSpawn());
                 return true;
             }
         }
 
-        if (mapCamera != null && player != null) {
-            mapCamera.position.set(player.getX(), player.getY(), 0);
-            mapCamera.update();
-        }
+        focusCameraOnPlayer();
+
         return true;
+    }
+
+    private void updateMoveSound(float touchX, float touchY, boolean touching) {
+        if (!touching) {
+            game.getSoundManager().stopMoveLoop();
+            return;
+        }
+
+        boolean moving =
+            leftButton.contains(touchX, touchY)
+                || rightButton.contains(touchX, touchY)
+                || upButton.contains(touchX, touchY)
+                || downButton.contains(touchX, touchY);
+
+        boolean attacking = attackButton.contains(touchX, touchY);
+
+        if (moving && !attacking) {
+            game.getSoundManager().startMoveLoop();
+        } else {
+            game.getSoundManager().stopMoveLoop();
+        }
     }
 
     @Override
@@ -321,6 +380,8 @@ public class GameScreen extends BaseScreen {
             return;
         }
 
+        drawLevelBackground();
+
         mapRenderer.setView(mapCamera);
         mapRenderer.render();
 
@@ -340,7 +401,13 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
-        game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
+        game.batch.draw(
+            menuButtonTexture,
+            menuButton.x,
+            menuButton.y,
+            menuButton.width,
+            menuButton.height
+        );
 
         drawHealthBar();
         drawControlButtons();
@@ -353,7 +420,7 @@ public class GameScreen extends BaseScreen {
             22
         );
 
-        if (puzzleManager != null) {
+        if (puzzleManager != null && puzzleManager.hasKeyObject()) {
             String keyText = puzzleManager.hasKey() ? "Key: Collected" : "Key: Missing";
 
             drawBoldTextWithBox(
@@ -365,25 +432,13 @@ public class GameScreen extends BaseScreen {
             );
         }
 
-        if (collisionManager != null && player != null) {
-            Vector2 playerTile = collisionManager.getTileAtWorld(player.getX(), player.getY());
-
-            String tileText =
-                "Tile: "
-                    + (int) Math.floor(playerTile.x)
-                    + ", "
-                    + (int) Math.floor(playerTile.y);
-
-            drawBoldTextWithBox(
-                smallFont,
-                tileText,
-                screenHeight * 0.72f,
-                30,
-                14
-            );
-        }
-
-        drawBoldTextWithBox(smallFont, "Use buttons to move Reiko", screenHeight * 0.08f, 30, 14);
+        drawBoldTextWithBox(
+            smallFont,
+            "Use buttons to move Reiko",
+            screenHeight * 0.08f,
+            30,
+            14
+        );
 
         game.batch.end();
     }
@@ -403,16 +458,26 @@ public class GameScreen extends BaseScreen {
 
         return 1;
     }
+
     private void drawMapError() {
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
 
-        game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+        if (backgroundTexture != null) {
+            game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+        }
+
         game.batch.draw(menuButtonTexture, menuButton.x, menuButton.y, menuButton.width, menuButton.height);
 
         drawBoldTextWithBox(titleFont, "Map Error", screenHeight * 0.70f, 45, 22);
-        drawBoldTextWithBox(smallFont, "Cannot load maps/level1.tmx", screenHeight * 0.55f, 35, 18);
-        drawBoldTextWithBox(smallFont, "Check level1.tmx, tileset.tsx, and spritesheet.png", screenHeight * 0.45f, 35, 18);
+
+        if (currentMapPath != null) {
+            drawBoldTextWithBox(smallFont, "Cannot load " + currentMapPath, screenHeight * 0.55f, 35, 18);
+        } else {
+            drawBoldTextWithBox(smallFont, "Cannot load selected map", screenHeight * 0.55f, 35, 18);
+        }
+
+        drawBoldTextWithBox(smallFont, "Check map, tileset, and spawn objects", screenHeight * 0.45f, 35, 18);
         drawBoldTextWithBox(smallFont, "Tap home button to go back", screenHeight * 0.35f, 35, 18);
 
         game.batch.end();
@@ -479,6 +544,63 @@ public class GameScreen extends BaseScreen {
         );
     }
 
+    private String getLevelBackgroundPath() {
+        if (currentMapPath != null) {
+            if (currentMapPath.contains("level1")) {
+                return "level_1.jpg";
+            }
+
+            if (currentMapPath.contains("level2")) {
+                return "level_2.jpg";
+            }
+
+            if (currentMapPath.contains("level3")) {
+                return "level_3.png";
+            }
+        }
+
+        int level = game.getLevelManager().getSelectedLevel();
+
+        if (level == 1) {
+            return "level_1.jpg";
+        }
+
+        if (level == 2) {
+            return "level_2.jpg";
+        }
+
+        if (level == 3) {
+            return "level_3.png";
+        }
+
+        return "level_1.jpg";
+    }
+
+    private void reloadLevelBackground() {
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+        }
+
+        backgroundTexture = new Texture(getLevelBackgroundPath());
+    }
+
+    private void drawLevelBackground() {
+        if (backgroundTexture == null || darkOverlayTexture == null) {
+            return;
+        }
+
+        game.batch.setProjectionMatrix(uiCamera.combined);
+        game.batch.begin();
+
+        game.batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+
+        game.batch.setColor(1f, 1f, 1f, 0.45f);
+        game.batch.draw(darkOverlayTexture, 0, 0, screenWidth, screenHeight);
+        game.batch.setColor(Color.WHITE);
+
+        game.batch.end();
+    }
+
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
@@ -488,7 +610,7 @@ public class GameScreen extends BaseScreen {
         if (mapCamera != null) {
             mapCamera.viewportWidth = screenWidth;
             mapCamera.viewportHeight = screenHeight;
-            mapCamera.update();
+            focusCameraOnPlayer();
         }
     }
 
@@ -496,15 +618,31 @@ public class GameScreen extends BaseScreen {
     public void dispose() {
         super.dispose();
 
-        backgroundTexture.dispose();
-        menuButtonTexture.dispose();
-        heartFullTexture.dispose();
-        buttonSheetTexture.dispose();
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+        }
+
+        if (darkOverlayTexture != null) {
+            darkOverlayTexture.dispose();
+        }
+
+        if (menuButtonTexture != null) {
+            menuButtonTexture.dispose();
+        }
+
+        if (heartFullTexture != null) {
+            heartFullTexture.dispose();
+        }
+
+        if (buttonSheetTexture != null) {
+            buttonSheetTexture.dispose();
+        }
 
         if (attackButtonTexture != null) {
             attackButtonTexture.dispose();
         }
 
+        game.getSoundManager().stopMoveLoop();
         disposeCurrentLevel();
 
         if (player != null) {

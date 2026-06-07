@@ -3,11 +3,9 @@ package com.AS.assignment1.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
-import com.badlogic.gdx.maps.objects.PointMapObject;
-import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 
 public class SpawnManager {
     private final TiledMap map;
@@ -36,42 +34,40 @@ public class SpawnManager {
 
             Gdx.app.log("SPAWN", "Found spawn object: " + objectName);
 
-            if (object.getProperties().containsKey("tileCol")
-                && object.getProperties().containsKey("tileRow")) {
-
-                int tileCol = getIntProperty(object, "tileCol");
-                int tileRow = getIntProperty(object, "tileRow");
-
-                Vector2 worldPosition = tileToWorld(tileCol, tileRow);
+            if (!object.getProperties().containsKey("tileCol")
+                || !object.getProperties().containsKey("tileRow")) {
 
                 Gdx.app.log(
                     "SPAWN",
-                    objectName + " tileCol=" + tileCol
-                        + ", tileRow=" + tileRow
-                        + " -> worldX=" + worldPosition.x
-                        + ", worldY=" + worldPosition.y
+                    objectName + " missing tileCol/tileRow. Using fallback."
                 );
 
-                return worldPosition;
+                return new Vector2(fallbackX, fallbackY);
             }
 
-            if (object instanceof PointMapObject) {
-                PointMapObject pointObject = (PointMapObject) object;
+            int tileCol = getIntProperty(object, "tileCol");
+            int tileRow = getIntProperty(object, "tileRow");
 
-                return new Vector2(
-                    pointObject.getPoint().x,
-                    pointObject.getPoint().y
-                );
-            }
+            float offsetX = getFloatProperty(object, "offsetX", 0f);
+            float offsetY = getFloatProperty(object, "offsetY", 0f);
 
-            if (object instanceof RectangleMapObject) {
-                Rectangle rect = ((RectangleMapObject) object).getRectangle();
+            Vector2 worldPosition = tileToWorld(tileCol, tileRow);
 
-                return new Vector2(
-                    rect.x + rect.width / 2f,
-                    rect.y
-                );
-            }
+            float finalX = worldPosition.x + offsetX;
+            float finalY = worldPosition.y + offsetY;
+
+            Gdx.app.log(
+                "SPAWN",
+                objectName
+                    + " tileCol=" + tileCol
+                    + ", tileRow=" + tileRow
+                    + " -> worldX=" + finalX
+                    + ", worldY=" + finalY
+                    + ", offsetX=" + offsetX
+                    + ", offsetY=" + offsetY
+            );
+
+            return new Vector2(finalX, finalY);
         }
 
         Gdx.app.log("SPAWN", "Spawn object not found: " + objectName + ". Using fallback.");
@@ -109,5 +105,79 @@ public class SpawnManager {
         }
 
         return Math.round(Float.parseFloat(value.toString()));
+    }
+
+    private float getFloatProperty(MapObject object, String propertyName, float fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Integer) {
+            return ((Integer) value).floatValue();
+        }
+
+        if (value instanceof Float) {
+            return (Float) value;
+        }
+
+        if (value instanceof Double) {
+            return ((Double) value).floatValue();
+        }
+
+        if (value instanceof String) {
+            return Float.parseFloat((String) value);
+        }
+
+        return Float.parseFloat(value.toString());
+    }
+
+    public Array<Vector2> getSpawnPointsByPrefix(String prefix) {
+        Array<Vector2> spawnPoints = new Array<>();
+
+        if (map == null || map.getLayers().get("Spawns") == null) {
+            Gdx.app.log("SPAWN", "No Spawns layer found for prefix: " + prefix);
+            return spawnPoints;
+        }
+
+        MapLayer spawnLayer = map.getLayers().get("Spawns");
+
+        for (MapObject object : spawnLayer.getObjects()) {
+            if (object.getName() == null || !object.getName().startsWith(prefix)) {
+                continue;
+            }
+
+            if (!object.getProperties().containsKey("tileCol")
+                || !object.getProperties().containsKey("tileRow")) {
+
+                Gdx.app.log("SPAWN", "Missing tileCol/tileRow on object: " + object.getName());
+                continue;
+            }
+
+            int tileCol = getIntProperty(object, "tileCol");
+            int tileRow = getIntProperty(object, "tileRow");
+
+            float offsetX = getFloatProperty(object, "offsetX", 0f);
+            float offsetY = getFloatProperty(object, "offsetY", 0f);
+
+            Vector2 worldPosition = tileToWorld(tileCol, tileRow);
+
+            float finalX = worldPosition.x + offsetX;
+            float finalY = worldPosition.y + offsetY;
+
+            Gdx.app.log(
+                "SPAWN",
+                object.getName()
+                    + " tileCol=" + tileCol
+                    + ", tileRow=" + tileRow
+                    + " -> x=" + finalX
+                    + ", y=" + finalY
+            );
+
+            spawnPoints.add(new Vector2(finalX, finalY));
+        }
+
+        return spawnPoints;
     }
 }

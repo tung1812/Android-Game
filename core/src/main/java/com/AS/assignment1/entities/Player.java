@@ -24,6 +24,7 @@ public class Player {
     private Animation<TextureRegion> runAnimation;
     private Animation<TextureRegion> attackAnimation;
 
+
     private PlayerState playerState;
 
     private float x;
@@ -217,13 +218,31 @@ public class Player {
     public void draw(SpriteBatch batch) {
         TextureRegion frame = getCurrentFrame();
 
+        TextureRegion frameToDraw = new TextureRegion(frame);
+
+        if (lastDirectionX < 0) {
+            frameToDraw.flip(true, false);
+        }
+
+        if (damageTimer > 0f) {
+            int flashStep = (int) (damageTimer * 12f);
+
+            if (flashStep % 2 == 0) {
+                batch.setColor(1f, 0.25f, 0.25f, 1f);
+            } else {
+                batch.setColor(1f, 1f, 1f, 1f);
+            }
+        }
+
         batch.draw(
-            frame,
+            frameToDraw,
             x - width / 2f,
             y - height * 0.15f,
             width,
             height
         );
+
+        batch.setColor(1f, 1f, 1f, 1f);
     }
 
     private TextureRegion getCurrentFrame() {
@@ -284,9 +303,9 @@ public class Player {
         );
     }
 
-    public void takeDamage(int amount) {
+    public boolean takeDamage(int amount) {
         if (damageTimer > 0) {
-            return;
+            return false;
         }
 
         health -= amount;
@@ -296,6 +315,8 @@ public class Player {
         }
 
         damageTimer = damageCooldown;
+
+        return true;
     }
 
     public Rectangle getAttackBounds() {
