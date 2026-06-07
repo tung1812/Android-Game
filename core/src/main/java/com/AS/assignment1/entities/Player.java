@@ -16,16 +16,39 @@ public class Player {
         ATTACK
     }
 
-    private Texture idleSheet;
-    private Texture runSheet;
-    private Texture attackSheet;
+    public enum Direction {
+        DOWN,
+        LEFT,
+        RIGHT,
+        UP
+    }
 
-    private Animation<TextureRegion> idleAnimation;
-    private Animation<TextureRegion> runAnimation;
-    private Animation<TextureRegion> attackAnimation;
+    private Texture idleDownSheet;
+    private Texture walkDownSheet;
+    private Texture punchDownSheet;
 
+    private Texture idleLeftSheet;
+    private Texture walkLeftSheet;
+    private Texture punchLeftSheet;
+
+    private Texture idleUpSheet;
+    private Texture walkUpSheet;
+    private Texture punchUpSheet;
+
+    private Animation<TextureRegion> idleDownAnimation;
+    private Animation<TextureRegion> walkDownAnimation;
+    private Animation<TextureRegion> punchDownAnimation;
+
+    private Animation<TextureRegion> idleLeftAnimation;
+    private Animation<TextureRegion> walkLeftAnimation;
+    private Animation<TextureRegion> punchLeftAnimation;
+
+    private Animation<TextureRegion> idleUpAnimation;
+    private Animation<TextureRegion> walkUpAnimation;
+    private Animation<TextureRegion> punchUpAnimation;
 
     private PlayerState playerState;
+    private Direction direction;
 
     private float x;
     private float y;
@@ -51,13 +74,15 @@ public class Player {
         x = startX;
         y = startY;
 
-        width = 96f;
-        height = 96f;
+        width = 65f;
+        height = 65f;
         speed = 160f;
 
         animationTime = 0f;
         attacking = false;
         playerState = PlayerState.IDLE;
+        direction = Direction.DOWN;
+
         lastDirectionX = 0f;
         lastDirectionY = -1f;
         attackHitRegistered = false;
@@ -72,63 +97,61 @@ public class Player {
     }
 
     private void loadAnimations() {
-        idleSheet = new Texture("ReikoAnimations/ReikoIdle.png");
-        runSheet = new Texture("ReikoAnimations/run.png");
-        attackSheet = new Texture("ReikoAnimations/attack.png");
+        idleDownSheet = new Texture("ReikoAnimations/bowling/idle.png");
+        walkDownSheet = new Texture("ReikoAnimations/bowling/walk.png");
+        punchDownSheet = new Texture("ReikoAnimations/bowling/punch.png");
 
-        idleAnimation = createOneFrameAnimation(idleSheet, 0.18f);
-        runAnimation = createGridAnimation(runSheet, 5, 2, 6, 0.12f);
-        attackAnimation = createGridAnimation(attackSheet, 5, 2, 7, 0.10f);
+        idleLeftSheet = new Texture("ReikoAnimations/bowling/idleleft.png");
+        walkLeftSheet = new Texture("ReikoAnimations/bowling/leftwalk.png");
+        punchLeftSheet = new Texture("ReikoAnimations/bowling/leftpunch.png");
 
-        idleAnimation.setPlayMode(Animation.PlayMode.LOOP);
-        runAnimation.setPlayMode(Animation.PlayMode.LOOP);
-        attackAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+        idleUpSheet = new Texture("ReikoAnimations/bowling/backidle.png");
+        walkUpSheet = new Texture("ReikoAnimations/bowling/backwalk.png");
+        punchUpSheet = new Texture("ReikoAnimations/bowling/backpunch.png");
+
+        idleDownAnimation = createHorizontalAnimation(idleDownSheet, 0.18f);
+        walkDownAnimation = createHorizontalAnimation(walkDownSheet, 0.12f);
+        punchDownAnimation = createHorizontalAnimation(punchDownSheet, 0.10f);
+
+        idleLeftAnimation = createHorizontalAnimation(idleLeftSheet, 0.18f);
+        walkLeftAnimation = createHorizontalAnimation(walkLeftSheet, 0.12f);
+        punchLeftAnimation = createHorizontalAnimation(punchLeftSheet, 0.10f);
+
+        idleUpAnimation = createHorizontalAnimation(idleUpSheet, 0.18f);
+        walkUpAnimation = createHorizontalAnimation(walkUpSheet, 0.12f);
+        punchUpAnimation = createHorizontalAnimation(punchUpSheet, 0.10f);
+
+        idleDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        walkDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        punchDownAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        idleLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        walkLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        punchLeftAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        idleUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        walkUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        punchUpAnimation.setPlayMode(Animation.PlayMode.NORMAL);
     }
 
-    private Animation<TextureRegion> createOneFrameAnimation(Texture sheet, float frameDuration) {
-        Array<TextureRegion> frames = new Array<>();
-        frames.add(new TextureRegion(sheet));
-
-        Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
-        animation.setPlayMode(Animation.PlayMode.LOOP);
-
-        return animation;
-    }
-
-    private Animation<TextureRegion> createGridAnimation(
-        Texture sheet,
-        int columns,
-        int rows,
-        int frameCount,
-        float frameDuration
-    ) {
+    private Animation<TextureRegion> createHorizontalAnimation(Texture sheet, float frameDuration) {
         Array<TextureRegion> frames = new Array<>();
 
-        int frameWidth = sheet.getWidth() / columns;
-        int frameHeight = sheet.getHeight() / rows;
+        int frameHeight = sheet.getHeight();
+        int frameCount = Math.max(1, sheet.getWidth() / frameHeight);
+        int frameWidth = sheet.getWidth() / frameCount;
 
-        int addedFrames = 0;
-
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < columns; col++) {
-                if (addedFrames < frameCount) {
-                    frames.add(new TextureRegion(
-                        sheet,
-                        col * frameWidth,
-                        row * frameHeight,
-                        frameWidth,
-                        frameHeight
-                    ));
-
-                    addedFrames++;
-                }
-            }
+        for (int i = 0; i < frameCount; i++) {
+            frames.add(new TextureRegion(
+                sheet,
+                i * frameWidth,
+                0,
+                frameWidth,
+                frameHeight
+            ));
         }
 
-        Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
-        animation.setPlayMode(Animation.PlayMode.LOOP);
-
-        return animation;
+        return new Animation<>(frameDuration, frames);
     }
 
     public void update(
@@ -161,24 +184,28 @@ public class Player {
 
             if (!attacking) {
                 if (leftButton.contains(touchX, touchY)) {
+                    direction = Direction.LEFT;
                     lastDirectionX = -1f;
                     lastDirectionY = 0f;
                     moving = tryMove(-speed * deltaTime, 0, collisionManager);
                 }
 
                 if (rightButton.contains(touchX, touchY)) {
+                    direction = Direction.RIGHT;
                     lastDirectionX = 1f;
                     lastDirectionY = 0f;
                     moving = tryMove(speed * deltaTime, 0, collisionManager);
                 }
 
                 if (upButton.contains(touchX, touchY)) {
+                    direction = Direction.UP;
                     lastDirectionX = 0f;
                     lastDirectionY = 1f;
                     moving = tryMove(0, speed * deltaTime, collisionManager);
                 }
 
                 if (downButton.contains(touchX, touchY)) {
+                    direction = Direction.DOWN;
                     lastDirectionX = 0f;
                     lastDirectionY = -1f;
                     moving = tryMove(0, -speed * deltaTime, collisionManager);
@@ -189,7 +216,7 @@ public class Player {
         if (attacking) {
             playerState = PlayerState.ATTACK;
 
-            if (attackAnimation.isAnimationFinished(animationTime)) {
+            if (getAttackAnimation().isAnimationFinished(animationTime)) {
                 attacking = false;
                 animationTime = 0f;
                 playerState = PlayerState.IDLE;
@@ -217,10 +244,9 @@ public class Player {
 
     public void draw(SpriteBatch batch) {
         TextureRegion frame = getCurrentFrame();
-
         TextureRegion frameToDraw = new TextureRegion(frame);
 
-        if (lastDirectionX < 0) {
+        if (direction == Direction.RIGHT) {
             frameToDraw.flip(true, false);
         }
 
@@ -246,15 +272,51 @@ public class Player {
     }
 
     private TextureRegion getCurrentFrame() {
-        if (playerState == PlayerState.RUN) {
-            return runAnimation.getKeyFrame(animationTime, true);
-        }
-
         if (playerState == PlayerState.ATTACK) {
-            return attackAnimation.getKeyFrame(animationTime, false);
+            return getAttackAnimation().getKeyFrame(animationTime, false);
         }
 
-        return idleAnimation.getKeyFrame(animationTime, true);
+        if (playerState == PlayerState.RUN) {
+            return getRunAnimation().getKeyFrame(animationTime, true);
+        }
+
+        return getIdleAnimation().getKeyFrame(animationTime, true);
+    }
+
+    private Animation<TextureRegion> getIdleAnimation() {
+        if (direction == Direction.UP) {
+            return idleUpAnimation;
+        }
+
+        if (direction == Direction.LEFT || direction == Direction.RIGHT) {
+            return idleLeftAnimation;
+        }
+
+        return idleDownAnimation;
+    }
+
+    private Animation<TextureRegion> getRunAnimation() {
+        if (direction == Direction.UP) {
+            return walkUpAnimation;
+        }
+
+        if (direction == Direction.LEFT || direction == Direction.RIGHT) {
+            return walkLeftAnimation;
+        }
+
+        return walkDownAnimation;
+    }
+
+    private Animation<TextureRegion> getAttackAnimation() {
+        if (direction == Direction.UP) {
+            return punchUpAnimation;
+        }
+
+        if (direction == Direction.LEFT || direction == Direction.RIGHT) {
+            return punchLeftAnimation;
+        }
+
+        return punchDownAnimation;
     }
 
     public void heal(int amount) {
@@ -326,7 +388,6 @@ public class Player {
 
         float attackCenterY = y + 12f;
 
-        // Facing right
         if (lastDirectionX > 0) {
             return new Rectangle(
                 x + bodyHalfWidth,
@@ -336,7 +397,6 @@ public class Player {
             );
         }
 
-        // Facing left
         if (lastDirectionX < 0) {
             return new Rectangle(
                 x - bodyHalfWidth - attackLength,
@@ -346,7 +406,6 @@ public class Player {
             );
         }
 
-        // Facing up
         if (lastDirectionY > 0) {
             return new Rectangle(
                 x - attackWidth / 2f,
@@ -356,7 +415,6 @@ public class Player {
             );
         }
 
-        // Facing down
         return new Rectangle(
             x - attackWidth / 2f,
             attackCenterY - bodyHalfWidth - attackLength,
@@ -374,8 +432,16 @@ public class Player {
     }
 
     public void dispose() {
-        idleSheet.dispose();
-        runSheet.dispose();
-        attackSheet.dispose();
+        idleDownSheet.dispose();
+        walkDownSheet.dispose();
+        punchDownSheet.dispose();
+
+        idleLeftSheet.dispose();
+        walkLeftSheet.dispose();
+        punchLeftSheet.dispose();
+
+        idleUpSheet.dispose();
+        walkUpSheet.dispose();
+        punchUpSheet.dispose();
     }
 }
