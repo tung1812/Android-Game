@@ -47,7 +47,7 @@ public class GameScreen extends BaseScreen {
     private Rectangle attackButton;
 
     private ShapeRenderer shapeRenderer;
-    private boolean showHitboxDebug = true;
+    private boolean showHitboxDebug = false;
     private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
@@ -486,8 +486,8 @@ public class GameScreen extends BaseScreen {
                 14
             );
         }
-
-        drawTileDebug();
+        // Tile coordinates for debugging
+//        drawTileDebug();
 
         drawBoldTextWithBox(
             smallFont,
