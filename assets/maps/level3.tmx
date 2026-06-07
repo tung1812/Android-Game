@@ -169,8 +169,8 @@
    <properties>
     <property name="targetMap" value="WIN"/>
     <property name="targetSpawn" value="player"/>
-    <property name="tileCol" value="26"/>
-    <property name="tileRow" value="6"/>
+    <property name="tileCol" value="22"/>
+    <property name="tileRow" value="7"/>
    </properties>
   </object>
  </objectgroup>
