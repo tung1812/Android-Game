@@ -12,12 +12,14 @@ public class PuzzleManager {
     private final int tileHeight;
 
     private boolean hasKey;
+    private boolean hasKeyObject;
 
     public PuzzleManager(TiledMap map) {
         this.map = map;
         this.tileWidth = map.getProperties().get("tilewidth", Integer.class);
         this.tileHeight = map.getProperties().get("tileheight", Integer.class);
         this.hasKey = false;
+        this.hasKeyObject = detectKeyObject();
     }
 
     public void update(float playerX, float playerY) {
@@ -30,14 +32,7 @@ public class PuzzleManager {
         MapLayer interactablesLayer = map.getLayers().get("Interactables");
 
         for (MapObject object : interactablesLayer.getObjects()) {
-            String type = getStringProperty(object, "type", "");
-            String objectName = object.getName();
-
-            boolean isKey =
-                "key".equalsIgnoreCase(type) ||
-                    (objectName != null && objectName.toLowerCase().startsWith("key"));
-
-            if (!isKey) {
+            if (!isKeyObject(object)) {
                 continue;
             }
 
@@ -70,6 +65,38 @@ public class PuzzleManager {
 
     public boolean hasKey() {
         return hasKey;
+    }
+
+    public boolean hasKeyObject() {
+        return hasKeyObject;
+    }
+
+    private boolean detectKeyObject() {
+        if (map == null || map.getLayers().get("Interactables") == null) {
+            return false;
+        }
+
+        MapLayer interactablesLayer = map.getLayers().get("Interactables");
+
+        for (MapObject object : interactablesLayer.getObjects()) {
+            if (isKeyObject(object)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isKeyObject(MapObject object) {
+        if (object == null) {
+            return false;
+        }
+
+        String type = getStringProperty(object, "type", "");
+        String objectName = object.getName();
+
+        return "key".equalsIgnoreCase(type)
+            || (objectName != null && objectName.toLowerCase().startsWith("key"));
     }
 
     private Vector2 worldToTile(float worldX, float worldY) {
