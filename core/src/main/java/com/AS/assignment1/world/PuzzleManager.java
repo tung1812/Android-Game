@@ -36,7 +36,7 @@ public class PuzzleManager {
         this.hasKeyObject = detectKeyObject();
     }
 
-    public void update(float playerX, float playerY) {
+    public void update(float playerX, float playerY, boolean enemiesCleared) {
         //Stop updating if the map or Interactables layer does not exist
         if (map == null || map.getLayers().get("Interactables") == null) {
             return;
@@ -53,6 +53,16 @@ public class PuzzleManager {
 
             //Skip objects that are not keys
             if (!isKeyObject(object)) {
+                continue;
+            }
+
+            boolean requiresEnemiesCleared = getBooleanProperty(
+                object,
+                "requiresEnemiesCleared",
+                false
+            );
+
+            if (requiresEnemiesCleared && !enemiesCleared) {
                 continue;
             }
 
@@ -98,6 +108,20 @@ public class PuzzleManager {
     public boolean hasKeyObject() {
         //Return whether the map contains any key object
         return hasKeyObject;
+    }
+
+    private boolean getBooleanProperty(MapObject object, String propertyName, boolean fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        return Boolean.parseBoolean(value.toString());
     }
 
     private boolean detectKeyObject() {

@@ -2,6 +2,8 @@ package com.AS.assignment1.entities;
 
 import com.AS.assignment1.world.CollisionManager;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
 public class EnemyManager {
@@ -90,6 +92,27 @@ public class EnemyManager {
         for (Enemy enemy : enemies) {
             enemy.draw(batch);
         }
+    }
+
+    public void drawHitboxDebug(ShapeRenderer shapeRenderer) {
+        for (Enemy enemy : enemies) {
+            if (enemy.isDead()) {
+                continue;
+            }
+
+            Rectangle bounds = enemy.getBounds();
+
+            shapeRenderer.rect(
+                bounds.x,
+                bounds.y,
+                bounds.width,
+                bounds.height
+            );
+        }
+    }
+
+    public boolean areAllEnemiesDefeated() {
+        return enemies.size == 0;
     }
 
     public void dispose() {

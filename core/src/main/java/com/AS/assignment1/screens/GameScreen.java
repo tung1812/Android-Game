@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -45,6 +46,8 @@ public class GameScreen extends BaseScreen {
     private Rectangle rightButton;
     private Rectangle attackButton;
 
+    private ShapeRenderer shapeRenderer;
+    private boolean showHitboxDebug = false;
     private boolean attackSoundPlayed;
 
     private TiledMap tiledMap;
@@ -65,6 +68,9 @@ public class GameScreen extends BaseScreen {
         super(game);
 
         currentMapPath = game.getLevelManager().getCurrentMapPath();
+
+        // hitbox for debug
+        shapeRenderer = new ShapeRenderer();
 
         backgroundTexture = new Texture(getLevelBackgroundPath());
         menuButtonTexture = new Texture("icon/home button.png");
@@ -324,7 +330,10 @@ public class GameScreen extends BaseScreen {
         }
 
         if (puzzleManager != null && player != null) {
-            puzzleManager.update(player.getX(), player.getY());
+            boolean enemiesCleared =
+                enemyManager == null || enemyManager.areAllEnemiesDefeated();
+
+            puzzleManager.update(player.getX(), player.getY(), enemiesCleared);
         }
 
         if (keyVisualManager != null) {
@@ -422,11 +431,18 @@ public class GameScreen extends BaseScreen {
 
         if (portalVisualManager != null) {
             boolean hasKey = puzzleManager != null && puzzleManager.hasKey();
-            portalVisualManager.draw(game.batch, hasKey);
+
+            boolean enemiesCleared =
+                enemyManager == null || enemyManager.areAllEnemiesDefeated();
+
+            portalVisualManager.draw(game.batch, hasKey, enemiesCleared);
         }
 
         if (keyVisualManager != null) {
-            keyVisualManager.draw(game.batch);
+            boolean enemiesCleared =
+                enemyManager == null || enemyManager.areAllEnemiesDefeated();
+
+            keyVisualManager.draw(game.batch, enemiesCleared);
         }
 
         if (player != null) {
@@ -438,6 +454,8 @@ public class GameScreen extends BaseScreen {
         }
 
         game.batch.end();
+
+        drawHitboxDebug();
 
         game.batch.setProjectionMatrix(uiCamera.combined);
         game.batch.begin();
@@ -472,8 +490,8 @@ public class GameScreen extends BaseScreen {
                 14
             );
         }
-
-        drawTileDebug();
+        // Tile coordinates for debugging
+//        drawTileDebug();
 
         drawBoldTextWithBox(
             smallFont,
@@ -486,6 +504,45 @@ public class GameScreen extends BaseScreen {
         game.batch.end();
     }
 
+    private void drawHitboxDebug() {
+        if (!showHitboxDebug || player == null || shapeRenderer == null) {
+            return;
+        }
+
+        shapeRenderer.setProjectionMatrix(mapCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        // Player body hitbox - green
+        Rectangle playerBounds = player.getBounds();
+        shapeRenderer.setColor(0f, 1f, 0f, 1f);
+        shapeRenderer.rect(
+            playerBounds.x,
+            playerBounds.y,
+            playerBounds.width,
+            playerBounds.height
+        );
+
+        // Player attack hitbox - red
+        if (player.isAttacking()) {
+            Rectangle attackBounds = player.getAttackBounds();
+
+            shapeRenderer.setColor(1f, 0f, 0f, 1f);
+            shapeRenderer.rect(
+                attackBounds.x,
+                attackBounds.y,
+                attackBounds.width,
+                attackBounds.height
+            );
+        }
+
+        // Enemy hitboxes - yellow
+        if (enemyManager != null) {
+            shapeRenderer.setColor(1f, 1f, 0f, 1f);
+            enemyManager.drawHitboxDebug(shapeRenderer);
+        }
+
+        shapeRenderer.end();
+    }
     private int getLevelNumberFromPath() {
         if (currentMapPath == null) {
             return game.getLevelManager().getSelectedLevel();
@@ -709,6 +766,11 @@ public class GameScreen extends BaseScreen {
 
         if (attackButtonTexture != null) {
             attackButtonTexture.dispose();
+        }
+
+        if (shapeRenderer != null) {
+            shapeRenderer.dispose();
+            shapeRenderer = null;
         }
 
         game.getSoundManager().stopMoveLoop();

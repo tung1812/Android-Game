@@ -95,7 +95,7 @@ public class PortalVisualManager {
         animationTime += deltaTime;
     }
 
-    public void draw(SpriteBatch batch, boolean hasKey) {
+    public void draw(SpriteBatch batch, boolean hasKey, boolean enemiesCleared) {
         //Stop drawing if the map or Interactables layer does not exist
         if (map == null || map.getLayers().get("Interactables") == null) {
             return;
@@ -119,7 +119,21 @@ public class PortalVisualManager {
             boolean requiresKey = getBooleanProperty(object, "requiresKey", false);
 
             //The portal is active if it does not need a key, the player has a key, or it is the win portal
-            boolean portalIsActive = !requiresKey || hasKey || "WIN".equals(targetMap);
+            boolean requiresEnemiesCleared = getBooleanProperty(
+                object,
+                "requiresEnemiesCleared",
+                false
+            );
+
+            boolean portalIsActive = true;
+
+            if (requiresKey && !hasKey) {
+                portalIsActive = false;
+            }
+
+            if (requiresEnemiesCleared && !enemiesCleared) {
+                portalIsActive = false;
+            }
 
             //Frame that will be drawn for this portal
             TextureRegion frame;

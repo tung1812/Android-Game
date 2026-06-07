@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="isometric" renderorder="left-down" width="50" height="50" tilewidth="32" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="36">
+<map version="1.10" tiledversion="1.12.1" orientation="isometric" renderorder="left-down" width="50" height="50" tilewidth="32" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="39">
  <tileset firstgid="1" source="tileset.tsx"/>
  <layer id="1" name="Tile Layer 1" width="50" height="50">
   <data encoding="csv">
@@ -112,50 +112,40 @@
  <objectgroup id="4" name="Spawns">
   <object id="3" name="player" x="27.5" y="678.5">
    <properties>
-    <property name="tileCol" value="14"/>
-    <property name="tileRow" value="41"/>
-   </properties>
-   <point/>
-  </object>
-  <object id="30" name="enemy6" x="381" y="383">
-   <properties>
-    <property name="tileCol" value="29"/>
-    <property name="tileRow" value="34"/>
+    <property name="tileCol" value="37"/>
+    <property name="tileRow" value="35"/>
    </properties>
    <point/>
   </object>
   <object id="31" name="enemy5" x="381" y="383">
    <properties>
-    <property name="tileCol" value="33"/>
-    <property name="tileRow" value="15"/>
+    <property name="patrolPattern" value="isoDownRight"/>
+    <property name="tileCol" value="26"/>
+    <property name="tileRow" value="43"/>
    </properties>
    <point/>
   </object>
   <object id="32" name="enemy4" x="381" y="383">
    <properties>
+    <property name="patrolPattern" value="isoDownRight"/>
     <property name="tileCol" value="11"/>
     <property name="tileRow" value="24"/>
    </properties>
    <point/>
   </object>
-  <object id="33" name="enemy3" x="403" y="389">
-   <properties>
-    <property name="tileCol" value="24"/>
-    <property name="tileRow" value="40"/>
-   </properties>
-   <point/>
-  </object>
   <object id="34" name="enemy2" x="403" y="389">
    <properties>
-    <property name="tileCol" value="9"/>
-    <property name="tileRow" value="28"/>
+    <property name="patrolPattern" value="isoUpRight"/>
+    <property name="tileCol" value="7"/>
+    <property name="tileRow" value="21"/>
    </properties>
    <point/>
   </object>
-  <object id="35" name="enemy1" x="403" y="389">
+  <object id="38" name="enemy3" x="393" y="387">
    <properties>
-    <property name="tileCol" value="24"/>
-    <property name="tileRow" value="17"/>
+    <property name="patrolPattern" value="isoDownRight"/>
+    <property name="tileCol" value="11"/>
+    <property name="tileRow" value="43"/>
    </properties>
    <point/>
   </object>
@@ -165,12 +155,23 @@
    <property name="targetMap" value="WIN"/>
    <property name="targetSpawn" value="player"/>
   </properties>
-  <object id="17" name="tele level 3" x="379.167" y="79.8333" width="16.3333" height="15.3333">
+  <object id="36" name="portalToLevel3" x="410.887" y="640.107" width="13.5585" height="12.4517">
    <properties>
+    <property name="requiresKey" type="bool" value="true"/>
     <property name="targetMap" value="WIN"/>
     <property name="targetSpawn" value="player"/>
-    <property name="tileCol" value="22"/>
-    <property name="tileRow" value="7"/>
+    <property name="tileCol" type="int" value="22"/>
+    <property name="tileRow" type="int" value="9"/>
+    <property name="visualTileCol" type="int" value="26"/>
+    <property name="visualTileRow" type="int" value="9"/>
+   </properties>
+  </object>
+  <object id="37" name="key3" x="258" y="494" width="16" height="16">
+   <properties>
+    <property name="requiresEnemiesCleared" type="bool" value="true"/>
+    <property name="tileCol" type="int" value="18"/>
+    <property name="tileRow" type="int" value="14"/>
+    <property name="type" value="key"/>
    </properties>
   </object>
  </objectgroup>
