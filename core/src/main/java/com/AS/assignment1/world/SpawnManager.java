@@ -19,6 +19,16 @@ public class SpawnManager {
         this.tileHeight = map.getProperties().get("tileheight", Integer.class);
     }
 
+    public static class EnemySpawn {
+        public final Vector2 position;
+        public final String patrolPattern;
+
+        public EnemySpawn(Vector2 position, String patrolPattern) {
+            this.position = position;
+            this.patrolPattern = patrolPattern;
+        }
+    }
+
     public Vector2 getSpawnPoint(String objectName, float fallbackX, float fallbackY) {
         if (map == null || map.getLayers().get("Spawns") == null) {
             Gdx.app.log("SPAWN", "No Spawns layer found. Using fallback for " + objectName);
@@ -73,6 +83,8 @@ public class SpawnManager {
         Gdx.app.log("SPAWN", "Spawn object not found: " + objectName + ". Using fallback.");
         return new Vector2(fallbackX, fallbackY);
     }
+
+
 
     private Vector2 tileToWorld(int tileCol, int tileRow) {
         float worldX = (tileCol + tileRow) * tileWidth / 2f;
@@ -131,6 +143,68 @@ public class SpawnManager {
         }
 
         return Float.parseFloat(value.toString());
+    }
+
+    public Array<EnemySpawn> getEnemySpawnsByPrefix(String prefix) {
+        Array<EnemySpawn> enemySpawns = new Array<>();
+
+        if (map == null || map.getLayers().get("Spawns") == null) {
+            return enemySpawns;
+        }
+
+        MapLayer spawnLayer = map.getLayers().get("Spawns");
+
+        for (MapObject object : spawnLayer.getObjects()) {
+            String objectName = object.getName();
+
+            if (objectName == null || !objectName.startsWith(prefix)) {
+                continue;
+            }
+
+            if (!object.getProperties().containsKey("tileCol") ||
+                !object.getProperties().containsKey("tileRow")) {
+
+                Gdx.app.log(
+                    "SPAWN",
+                    "Skipping enemy without tileCol/tileRow: " + objectName
+                );
+
+                continue;
+            }
+
+            int tileCol = getIntProperty(object, "tileCol");
+            int tileRow = getIntProperty(object, "tileRow");
+
+            Vector2 position = tileToWorld(tileCol, tileRow);
+
+            String patrolPattern = getStringProperty(
+                object,
+                "patrolPattern",
+                "isoDownRight"
+            );
+
+            enemySpawns.add(new EnemySpawn(position, patrolPattern));
+
+            Gdx.app.log(
+                "SPAWN",
+                objectName
+                    + " tileCol=" + tileCol
+                    + ", tileRow=" + tileRow
+                    + ", pattern=" + patrolPattern
+            );
+        }
+
+        return enemySpawns;
+    }
+
+    private String getStringProperty(MapObject object, String propertyName, String fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        return value.toString();
     }
 
     public Array<Vector2> getSpawnPointsByPrefix(String prefix) {

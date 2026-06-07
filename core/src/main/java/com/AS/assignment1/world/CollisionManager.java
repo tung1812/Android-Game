@@ -46,6 +46,7 @@ public class CollisionManager {
         return collisionLayer.getCell(tileCol, tileRow) != null;
     }
 
+    // Debug method
     public Vector2 getTileAtWorld(float worldX, float worldY) {
         return worldToTile(worldX, worldY);
     }

@@ -12,7 +12,11 @@ public class EnemyManager {
     }
 
     public void addEnemy(float x, float y) {
-        enemies.add(new Enemy(x, y));
+        enemies.add(new Enemy(x, y, "isoDownRight"));
+    }
+
+    public void addEnemy(float x, float y, String patrolPattern) {
+        enemies.add(new Enemy(x, y, patrolPattern));
     }
 
     public boolean update(float deltaTime, CollisionManager collisionManager, Player player) {

@@ -7,6 +7,8 @@ import com.AS.assignment1.world.CollisionManager;
 import com.AS.assignment1.world.MapTransitionManager;
 import com.AS.assignment1.world.PuzzleManager;
 import com.AS.assignment1.world.SpawnManager;
+import com.AS.assignment1.world.PortalVisualManager;
+import com.AS.assignment1.world.KeyVisualManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -54,6 +56,8 @@ public class GameScreen extends BaseScreen {
     private CollisionManager collisionManager;
     private MapTransitionManager mapTransitionManager;
     private PuzzleManager puzzleManager;
+    private PortalVisualManager portalVisualManager;
+    private KeyVisualManager keyVisualManager;
 
     private String currentMapPath;
 
@@ -172,6 +176,8 @@ public class GameScreen extends BaseScreen {
             collisionManager = new CollisionManager(tiledMap);
             mapTransitionManager = new MapTransitionManager(tiledMap);
             puzzleManager = new PuzzleManager(tiledMap);
+            portalVisualManager = new PortalVisualManager(tiledMap);
+            keyVisualManager = new KeyVisualManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -193,11 +199,24 @@ public class GameScreen extends BaseScreen {
             }
 
             enemyManager = new EnemyManager();
-            Array<Vector2> enemySpawns = spawnManager.getSpawnPointsByPrefix("enemy");
+            Array<SpawnManager.EnemySpawn> enemySpawns = spawnManager.getEnemySpawnsByPrefix("enemy");
 
-            for (Vector2 enemySpawn : enemySpawns) {
-                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
-                Gdx.app.log("SPAWN", "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y);
+            for (SpawnManager.EnemySpawn enemySpawn : enemySpawns) {
+                enemyManager.addEnemy(
+                    enemySpawn.position.x,
+                    enemySpawn.position.y,
+                    enemySpawn.patrolPattern
+                );
+
+                Gdx.app.log(
+                    "SPAWN",
+                    "Enemy spawn: "
+                        + enemySpawn.position.x
+                        + ", "
+                        + enemySpawn.position.y
+                        + " pattern="
+                        + enemySpawn.patrolPattern
+                );
             }
 
             focusCameraOnPlayer();
@@ -233,6 +252,11 @@ public class GameScreen extends BaseScreen {
         if (mapRenderer != null) {
             mapRenderer.dispose();
             mapRenderer = null;
+        }
+
+        if (portalVisualManager != null) {
+            portalVisualManager.dispose();
+            portalVisualManager = null;
         }
 
         collisionManager = null;
@@ -301,6 +325,14 @@ public class GameScreen extends BaseScreen {
 
         if (puzzleManager != null && player != null) {
             puzzleManager.update(player.getX(), player.getY());
+        }
+
+        if (keyVisualManager != null) {
+            keyVisualManager.update(deltaTime);
+        }
+
+        if (portalVisualManager != null) {
+            portalVisualManager.update(deltaTime);
         }
 
         if (mapTransitionManager != null && player != null) {
@@ -388,6 +420,15 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(mapCamera.combined);
         game.batch.begin();
 
+        if (portalVisualManager != null) {
+            boolean hasKey = puzzleManager != null && puzzleManager.hasKey();
+            portalVisualManager.draw(game.batch, hasKey);
+        }
+
+        if (keyVisualManager != null) {
+            keyVisualManager.draw(game.batch);
+        }
+
         if (player != null) {
             player.draw(game.batch);
         }
@@ -432,6 +473,8 @@ public class GameScreen extends BaseScreen {
             );
         }
 
+        drawTileDebug();
+
         drawBoldTextWithBox(
             smallFont,
             "Use buttons to move Reiko",
@@ -457,6 +500,32 @@ public class GameScreen extends BaseScreen {
         }
 
         return 1;
+    }
+
+    // get tiles coordinate
+    private void drawTileDebug() {
+        if (collisionManager == null || player == null) {
+            return;
+        }
+
+        Vector2 playerTile = collisionManager.getTileAtWorld(
+            player.getX(),
+            player.getY()
+        );
+
+        String tileText =
+            "Tile: "
+                + (int) Math.floor(playerTile.x)
+                + ", "
+                + (int) Math.floor(playerTile.y);
+
+        drawBoldTextWithBox(
+            smallFont,
+            tileText,
+            screenHeight * 0.72f,
+            30,
+            14
+        );
     }
 
     private void drawMapError() {
