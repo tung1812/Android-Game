@@ -112,7 +112,7 @@ public class KeyVisualManager {
         }
     }
 
-    public void draw(SpriteBatch batch) {
+    public void draw(SpriteBatch batch, boolean enemiesCleared) {
         if (map == null || map.getLayers().get("Interactables") == null) {
             return;
         }
@@ -121,6 +121,16 @@ public class KeyVisualManager {
 
         for (MapObject object : interactablesLayer.getObjects()) {
             if (!isKeyObject(object)) {
+                continue;
+            }
+
+            boolean requiresEnemiesCleared = getBooleanProperty(
+                object,
+                "requiresEnemiesCleared",
+                false
+            );
+
+            if (requiresEnemiesCleared && !enemiesCleared) {
                 continue;
             }
 
@@ -167,6 +177,20 @@ public class KeyVisualManager {
                 drawHeight
             );
         }
+    }
+
+    private boolean getBooleanProperty(MapObject object, String propertyName, boolean fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        return Boolean.parseBoolean(value.toString());
     }
 
     private boolean isKeyObject(MapObject object) {

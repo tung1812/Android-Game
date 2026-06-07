@@ -360,7 +360,7 @@ public class Player {
         return new Rectangle(
             x - 16f,
             y,
-            32f,
+            28f,
             32f
         );
     }

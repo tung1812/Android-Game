@@ -244,9 +244,9 @@ public class Enemy {
 
     public Rectangle getBounds() {
         return new Rectangle(
-            x - 22f,
-            y + 4f,
-            44f,
+            x - 14f,
+            y - 8f,
+            26f,
             40f
         );
     }

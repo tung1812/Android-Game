@@ -22,7 +22,7 @@ public class PuzzleManager {
         this.hasKeyObject = detectKeyObject();
     }
 
-    public void update(float playerX, float playerY) {
+    public void update(float playerX, float playerY, boolean enemiesCleared) {
         if (map == null || map.getLayers().get("Interactables") == null) {
             return;
         }
@@ -33,6 +33,16 @@ public class PuzzleManager {
 
         for (MapObject object : interactablesLayer.getObjects()) {
             if (!isKeyObject(object)) {
+                continue;
+            }
+
+            boolean requiresEnemiesCleared = getBooleanProperty(
+                object,
+                "requiresEnemiesCleared",
+                false
+            );
+
+            if (requiresEnemiesCleared && !enemiesCleared) {
                 continue;
             }
 
@@ -69,6 +79,20 @@ public class PuzzleManager {
 
     public boolean hasKeyObject() {
         return hasKeyObject;
+    }
+
+    private boolean getBooleanProperty(MapObject object, String propertyName, boolean fallback) {
+        Object value = object.getProperties().get(propertyName);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        return Boolean.parseBoolean(value.toString());
     }
 
     private boolean detectKeyObject() {
