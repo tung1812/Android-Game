@@ -6,7 +6,9 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.MathUtils;
 
 public class Enemy {
     private Texture spriteSheet;
@@ -26,11 +28,15 @@ public class Enemy {
     private boolean dead;
     private float hitCooldown;
     private float hitTimer;
+    private float patrolDirX;
+    private float patrolDirY;
+    private float startY;
 
-    public Enemy(float startX, float startY) {
+    public Enemy(float startX, float startY, String patrolPattern) {
         this.x = startX;
         this.y = startY;
         this.startX = startX;
+        this.startY = startY;
 
         width = 64f;
         height = 64f;
@@ -45,10 +51,14 @@ public class Enemy {
         speed = 60f;
         patrolDistance = 120f;
         direction = 1; // 1 = right, -1 = left
+        setPatrolPattern(patrolPattern);
 
         loadAnimation();
     }
 
+    public Enemy(float startX, float startY) {
+        this(startX, startY, "isoDownRight");
+    }
     private void loadAnimation() {
         spriteSheet = new Texture("Enemies/MiniHalberdMan.png");
 
@@ -73,27 +83,27 @@ public class Enemy {
             return;
         }
 
+        animationTime += deltaTime;
+
         if (hitTimer > 0) {
             hitTimer -= deltaTime;
         }
 
-        animationTime += deltaTime;
+        float dx = direction * patrolDirX * speed * deltaTime;
+        float dy = direction * patrolDirY * speed * deltaTime;
 
-        float dx = direction * speed * deltaTime;
-
-        if (canMove(dx, 0, collisionManager)) {
+        if (canMove(dx, dy, collisionManager)) {
             x += dx;
+            y += dy;
         } else {
             direction *= -1;
             return;
         }
 
-        if (x > startX + patrolDistance) {
-            x = startX + patrolDistance;
-            direction = -1;
-        } else if (x < startX - patrolDistance) {
-            x = startX - patrolDistance;
-            direction = 1;
+        float distanceFromStart = Vector2.dst(startX, startY, x, y);
+
+        if (distanceFromStart > patrolDistance) {
+            direction *= -1;
         }
     }
 
@@ -129,6 +139,54 @@ public class Enemy {
             width,
             height
         );
+    }
+
+    private void setPatrolPattern(String pattern) {
+        if (pattern == null || pattern.length() == 0) {
+            pattern = "isoDownRight";
+        }
+
+        if ("random".equalsIgnoreCase(pattern)) {
+            int randomPattern = MathUtils.random(0, 2);
+
+            if (randomPattern == 0) {
+                pattern = "horizontal";
+            } else if (randomPattern == 1) {
+                pattern = "isoDownRight";
+            } else {
+                pattern = "isoUpRight";
+            }
+        }
+
+        if ("horizontal".equalsIgnoreCase(pattern)) {
+            patrolDirX = 1f;
+            patrolDirY = 0f;
+        } else if ("isoUpRight".equalsIgnoreCase(pattern)) {
+            patrolDirX = 1f;
+            patrolDirY = -0.5f;
+        } else if ("vertical".equalsIgnoreCase(pattern)) {
+            patrolDirX = 0f;
+            patrolDirY = 1f;
+        } else {
+            // Default: isoDownRight
+            patrolDirX = 1f;
+            patrolDirY = 0.5f;
+        }
+
+        normalizePatrolDirection();
+    }
+
+    private void normalizePatrolDirection() {
+        float length = (float) Math.sqrt(patrolDirX * patrolDirX + patrolDirY * patrolDirY);
+
+        if (length == 0) {
+            patrolDirX = 1f;
+            patrolDirY = 0f;
+            return;
+        }
+
+        patrolDirX /= length;
+        patrolDirY /= length;
     }
 
     public Rectangle getBounds() {

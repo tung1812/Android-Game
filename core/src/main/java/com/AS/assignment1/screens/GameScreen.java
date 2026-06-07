@@ -1,18 +1,20 @@
 package com.AS.assignment1.screens;
 
 import com.AS.assignment1.Main;
-import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.entities.EnemyManager;
-import com.AS.assignment1.world.SpawnManager;
+import com.AS.assignment1.entities.Player;
 import com.AS.assignment1.world.CollisionManager;
 import com.AS.assignment1.world.MapTransitionManager;
-
+import com.AS.assignment1.world.PuzzleManager;
+import com.AS.assignment1.world.SpawnManager;
+import com.AS.assignment1.world.PortalVisualManager;
+import com.AS.assignment1.world.KeyVisualManager;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.tiled.TiledMap;
@@ -23,11 +25,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public class GameScreen extends BaseScreen {
-
     private Texture backgroundTexture;
+    private Texture darkOverlayTexture;
     private Texture menuButtonTexture;
     private Texture heartFullTexture;
-    private Texture darkOverlayTexture;
+
     private Texture buttonSheetTexture;
     private Texture attackButtonTexture;
 
@@ -53,6 +55,9 @@ public class GameScreen extends BaseScreen {
     private EnemyManager enemyManager;
     private CollisionManager collisionManager;
     private MapTransitionManager mapTransitionManager;
+    private PuzzleManager puzzleManager;
+    private PortalVisualManager portalVisualManager;
+    private KeyVisualManager keyVisualManager;
 
     private String currentMapPath;
 
@@ -73,7 +78,6 @@ public class GameScreen extends BaseScreen {
 
         buttonSheetTexture = new Texture("Buttons/Gray_Buttons_Pixel.png");
         attackButtonTexture = new Texture("Buttons/attack.png");
-
         loadButtonRegions();
 
         attackSoundPlayed = false;
@@ -169,9 +173,11 @@ public class GameScreen extends BaseScreen {
 
             tiledMap = new TmxMapLoader().load(mapPath);
             mapRenderer = new IsometricTiledMapRenderer(tiledMap);
-
             collisionManager = new CollisionManager(tiledMap);
             mapTransitionManager = new MapTransitionManager(tiledMap);
+            puzzleManager = new PuzzleManager(tiledMap);
+            portalVisualManager = new PortalVisualManager(tiledMap);
+            keyVisualManager = new KeyVisualManager(tiledMap);
 
             MapProperties properties = tiledMap.getProperties();
 
@@ -193,15 +199,23 @@ public class GameScreen extends BaseScreen {
             }
 
             enemyManager = new EnemyManager();
+            Array<SpawnManager.EnemySpawn> enemySpawns = spawnManager.getEnemySpawnsByPrefix("enemy");
 
-            Array<Vector2> enemySpawns = spawnManager.getSpawnPointsByPrefix("enemy");
-
-            for (Vector2 enemySpawn : enemySpawns) {
-                enemyManager.addEnemy(enemySpawn.x, enemySpawn.y);
+            for (SpawnManager.EnemySpawn enemySpawn : enemySpawns) {
+                enemyManager.addEnemy(
+                    enemySpawn.position.x,
+                    enemySpawn.position.y,
+                    enemySpawn.patrolPattern
+                );
 
                 Gdx.app.log(
                     "SPAWN",
-                    "Enemy spawn: " + enemySpawn.x + ", " + enemySpawn.y
+                    "Enemy spawn: "
+                        + enemySpawn.position.x
+                        + ", "
+                        + enemySpawn.position.y
+                        + " pattern="
+                        + enemySpawn.patrolPattern
                 );
             }
 
@@ -218,6 +232,7 @@ public class GameScreen extends BaseScreen {
             mapRenderer = null;
             collisionManager = null;
             mapTransitionManager = null;
+            puzzleManager = null;
             enemyManager = null;
             player = null;
         }
@@ -239,8 +254,14 @@ public class GameScreen extends BaseScreen {
             mapRenderer = null;
         }
 
+        if (portalVisualManager != null) {
+            portalVisualManager.dispose();
+            portalVisualManager = null;
+        }
+
         collisionManager = null;
         mapTransitionManager = null;
+        puzzleManager = null;
     }
 
     private boolean update(float deltaTime) {
@@ -254,6 +275,7 @@ public class GameScreen extends BaseScreen {
 
             if (menuButton.contains(touchX, touchY)) {
                 game.getSoundManager().playClick();
+                game.getSoundManager().stopMoveLoop();
                 game.showMenuScreen();
                 return false;
             }
@@ -296,8 +318,21 @@ public class GameScreen extends BaseScreen {
         }
 
         if (player != null && player.isDead()) {
+            game.getSoundManager().stopMoveLoop();
             game.showDeathScreen();
             return false;
+        }
+
+        if (puzzleManager != null && player != null) {
+            puzzleManager.update(player.getX(), player.getY());
+        }
+
+        if (keyVisualManager != null) {
+            keyVisualManager.update(deltaTime);
+        }
+
+        if (portalVisualManager != null) {
+            portalVisualManager.update(deltaTime);
         }
 
         if (mapTransitionManager != null && player != null) {
@@ -305,7 +340,14 @@ public class GameScreen extends BaseScreen {
                 mapTransitionManager.checkTransition(player.getBounds());
 
             if (transition != null) {
+                if (transition.requiresKey()
+                    && (puzzleManager == null || !puzzleManager.hasKey())) {
+                    Gdx.app.log("PUZZLE", "This exit requires a key.");
+                    return true;
+                }
+
                 if ("WIN".equals(transition.getTargetMap())) {
+                    game.getSoundManager().stopMoveLoop();
                     game.showWinScreen();
                     return false;
                 }
@@ -320,6 +362,7 @@ public class GameScreen extends BaseScreen {
                     game.getLevelManager().setSelectedLevel(3);
                 }
 
+                game.getSoundManager().stopMoveLoop();
                 loadMap(transition.getTargetMap(), transition.getTargetSpawn());
                 return true;
             }
@@ -377,6 +420,15 @@ public class GameScreen extends BaseScreen {
         game.batch.setProjectionMatrix(mapCamera.combined);
         game.batch.begin();
 
+        if (portalVisualManager != null) {
+            boolean hasKey = puzzleManager != null && puzzleManager.hasKey();
+            portalVisualManager.draw(game.batch, hasKey);
+        }
+
+        if (keyVisualManager != null) {
+            keyVisualManager.draw(game.batch);
+        }
+
         if (player != null) {
             player.draw(game.batch);
         }
@@ -403,11 +455,25 @@ public class GameScreen extends BaseScreen {
 
         drawBoldTextWithBox(
             titleFont,
-            "LEVEL " + game.getLevelManager().getSelectedLevel(),
+            "LEVEL " + getLevelNumberFromPath(),
             screenHeight * 0.92f,
             45,
             22
         );
+
+        if (puzzleManager != null && puzzleManager.hasKeyObject()) {
+            String keyText = puzzleManager.hasKey() ? "Key: Collected" : "Key: Missing";
+
+            drawBoldTextWithBox(
+                smallFont,
+                keyText,
+                screenHeight * 0.82f,
+                30,
+                14
+            );
+        }
+
+        drawTileDebug();
 
         drawBoldTextWithBox(
             smallFont,
@@ -418,6 +484,48 @@ public class GameScreen extends BaseScreen {
         );
 
         game.batch.end();
+    }
+
+    private int getLevelNumberFromPath() {
+        if (currentMapPath == null) {
+            return game.getLevelManager().getSelectedLevel();
+        }
+
+        if (currentMapPath.contains("level2")) {
+            return 2;
+        }
+
+        if (currentMapPath.contains("level3")) {
+            return 3;
+        }
+
+        return 1;
+    }
+
+    // get tiles coordinate
+    private void drawTileDebug() {
+        if (collisionManager == null || player == null) {
+            return;
+        }
+
+        Vector2 playerTile = collisionManager.getTileAtWorld(
+            player.getX(),
+            player.getY()
+        );
+
+        String tileText =
+            "Tile: "
+                + (int) Math.floor(playerTile.x)
+                + ", "
+                + (int) Math.floor(playerTile.y);
+
+        drawBoldTextWithBox(
+            smallFont,
+            tileText,
+            screenHeight * 0.72f,
+            30,
+            14
+        );
     }
 
     private void drawMapError() {
@@ -581,32 +689,26 @@ public class GameScreen extends BaseScreen {
 
         if (backgroundTexture != null) {
             backgroundTexture.dispose();
-            backgroundTexture = null;
-        }
-
-        if (menuButtonTexture != null) {
-            menuButtonTexture.dispose();
-            menuButtonTexture = null;
-        }
-
-        if (heartFullTexture != null) {
-            heartFullTexture.dispose();
-            heartFullTexture = null;
         }
 
         if (darkOverlayTexture != null) {
             darkOverlayTexture.dispose();
-            darkOverlayTexture = null;
+        }
+
+        if (menuButtonTexture != null) {
+            menuButtonTexture.dispose();
+        }
+
+        if (heartFullTexture != null) {
+            heartFullTexture.dispose();
         }
 
         if (buttonSheetTexture != null) {
             buttonSheetTexture.dispose();
-            buttonSheetTexture = null;
         }
 
         if (attackButtonTexture != null) {
             attackButtonTexture.dispose();
-            attackButtonTexture = null;
         }
 
         game.getSoundManager().stopMoveLoop();

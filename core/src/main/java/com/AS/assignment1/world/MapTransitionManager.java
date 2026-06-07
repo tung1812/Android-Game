@@ -5,6 +5,7 @@ import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 
 public class MapTransitionManager {
     private final TiledMap map;
@@ -18,83 +19,64 @@ public class MapTransitionManager {
     }
 
     public TransitionResult checkTransition(Rectangle playerBounds) {
-        if (map == null) {
+        if (map == null || map.getLayers().get("Interactables") == null) {
             return null;
         }
 
         MapLayer interactablesLayer = map.getLayers().get("Interactables");
 
-        if (interactablesLayer == null) {
-            return null;
-        }
-
-        int playerTileCol = getTileColFromWorld(playerBounds);
-        int playerTileRow = getTileRowFromWorld(playerBounds);
-
         for (MapObject object : interactablesLayer.getObjects()) {
-            if (object == null) {
+            if (!object.getProperties().containsKey("tileCol") ||
+                !object.getProperties().containsKey("tileRow")) {
                 continue;
             }
 
-            if (!object.getProperties().containsKey("tileCol")
-                || !object.getProperties().containsKey("tileRow")) {
+            int tileCol = getIntProperty(object, "tileCol");
+            int tileRow = getIntProperty(object, "tileRow");
 
-                Gdx.app.log(
-                    "LEVEL",
-                    "Missing tileCol/tileRow on object: " + object.getName()
-                );
-                continue;
-            }
+            Vector2 worldPosition = tileToWorld(tileCol, tileRow);
 
-            int targetTileCol = getIntProperty(object, "tileCol");
-            int targetTileRow = getIntProperty(object, "tileRow");
-
-            String targetMap = getStringProperty(object, "targetMap", "");
-            String targetSpawn = getStringProperty(object, "targetSpawn", "player");
-
-            Gdx.app.log(
-                "LEVEL",
-                "Checking "
-                    + object.getName()
-                    + " targetTile=(" + targetTileCol + "," + targetTileRow + ")"
-                    + " playerTile=(" + playerTileCol + "," + playerTileRow + ")"
-                    + " targetMap=" + targetMap
+            Rectangle triggerBounds = new Rectangle(
+                worldPosition.x - 24f,
+                worldPosition.y - 12f,
+                48f,
+                32f
             );
 
-            int tileRange = 1;
+            if (playerBounds.overlaps(triggerBounds)) {
+                String targetMap = getStringProperty(object, "targetMap", "");
+                String targetSpawn = getStringProperty(object, "targetSpawn", "player");
+                boolean requiresKey = getBooleanProperty(object, "requiresKey", false);
 
-            boolean isNearTarget =
-                Math.abs(playerTileCol - targetTileCol) <= tileRange
-                    && Math.abs(playerTileRow - targetTileRow) <= tileRange;
-
-            if (isNearTarget) {
                 if (targetMap.length() > 0) {
                     Gdx.app.log("LEVEL", "Transition to " + targetMap);
-                    return new TransitionResult(targetMap, targetSpawn);
+                    return new TransitionResult(targetMap, targetSpawn, requiresKey);
                 }
-
-                Gdx.app.log(
-                    "LEVEL",
-                    "targetMap is empty on object: " + object.getName()
-                );
             }
         }
 
         return null;
     }
 
-    private int getTileColFromWorld(Rectangle playerBounds) {
-        float centerX = playerBounds.x + playerBounds.width / 2f;
-        float centerY = playerBounds.y + playerBounds.height / 2f;
+    private boolean getBooleanProperty(MapObject object, String propertyName, boolean fallback) {
+        Object value = object.getProperties().get(propertyName);
 
-        return Math.round(centerX / tileWidth - centerY / tileHeight);
+        if (value == null) {
+            return fallback;
+        }
+
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+
+        return Boolean.parseBoolean(value.toString());
     }
 
-    private int getTileRowFromWorld(Rectangle playerBounds) {
-        float centerX = playerBounds.x + playerBounds.width / 2f;
-        float centerY = playerBounds.y + playerBounds.height / 2f;
+    private Vector2 tileToWorld(int tileCol, int tileRow) {
+        float worldX = (tileCol + tileRow) * tileWidth / 2f;
+        float worldY = (tileRow - tileCol) * tileHeight / 2f;
 
-        return Math.round(centerX / tileWidth + centerY / tileHeight);
+        return new Vector2(worldX, worldY);
     }
 
     private int getIntProperty(MapObject object, String propertyName) {
@@ -116,10 +98,6 @@ public class MapTransitionManager {
             return (int) Math.round((Double) value);
         }
 
-        if (value instanceof String) {
-            return Math.round(Float.parseFloat((String) value));
-        }
-
         return Math.round(Float.parseFloat(value.toString()));
     }
 
@@ -136,10 +114,12 @@ public class MapTransitionManager {
     public static class TransitionResult {
         private final String targetMap;
         private final String targetSpawn;
+        private final boolean requiresKey;
 
-        public TransitionResult(String targetMap, String targetSpawn) {
+        public TransitionResult(String targetMap, String targetSpawn, boolean requiresKey) {
             this.targetMap = targetMap;
             this.targetSpawn = targetSpawn;
+            this.requiresKey = requiresKey;
         }
 
         public String getTargetMap() {
@@ -148,6 +128,10 @@ public class MapTransitionManager {
 
         public String getTargetSpawn() {
             return targetSpawn;
+        }
+
+        public boolean requiresKey() {
+            return requiresKey;
         }
     }
 }
