@@ -12,7 +12,17 @@ import com.badlogic.gdx.math.MathUtils;
 
 public class Enemy {
     private Texture spriteSheet;
+    private enum EnemyState {
+        WALK,
+        DYING,
+        DEAD
+    }
     private Animation<TextureRegion> walkAnimation;
+    private Animation<TextureRegion> deathAnimation;
+    private EnemyState enemyState;
+
+    private float stateTime;
+    private float hitFlashTimer;
 
     private float x;
     private float y;
@@ -32,6 +42,8 @@ public class Enemy {
     private float patrolDirY;
     private float startY;
 
+
+
     public Enemy(float startX, float startY, String patrolPattern) {
         this.x = startX;
         this.y = startY;
@@ -41,12 +53,15 @@ public class Enemy {
         width = 64f;
         height = 64f;
 
-        health = 1;
+        health = 2;
         dead = false;
         hitCooldown = 0.8f;
         hitTimer = 0f;
 
         animationTime = 0f;
+        stateTime = 0f;
+        hitFlashTimer = 0f;
+        enemyState = EnemyState.WALK;
 
         speed = 60f;
         patrolDistance = 120f;
@@ -65,29 +80,56 @@ public class Enemy {
         TextureRegion[][] frames = TextureRegion.split(spriteSheet, 32, 32);
 
         Array<TextureRegion> walkFrames = new Array<>();
+        Array<TextureRegion> deathFrames = new Array<>();
 
-        // Row 0 has empty frames at the end, which causes flashing.
-        // Row 1 has 6 visible frames, so it is safer for now.
-        int row = 1;
+        // Your current walking row.
+        int walkRow = 1;
 
         for (int col = 0; col < 6; col++) {
-            walkFrames.add(frames[row][col]);
+            walkFrames.add(frames[walkRow][col]);
+        }
+
+        // The bottom row appears to contain the falling / dying frames.
+        int deathRow = frames.length - 1;
+
+        for (int col = 0; col < frames[deathRow].length; col++) {
+            deathFrames.add(frames[deathRow][col]);
         }
 
         walkAnimation = new Animation<>(0.15f, walkFrames);
         walkAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        deathAnimation = new Animation<>(0.12f, deathFrames);
+        deathAnimation.setPlayMode(Animation.PlayMode.NORMAL);
     }
 
     public void update(float deltaTime, CollisionManager collisionManager) {
-        if (dead) {
+        if (enemyState == EnemyState.DEAD) {
+            return;
+        }
+
+        stateTime += deltaTime;
+
+        if (hitTimer > 0) {
+            hitTimer -= deltaTime;
+        }
+
+        if (hitFlashTimer > 0) {
+            hitFlashTimer -= deltaTime;
+        }
+
+        if (enemyState == EnemyState.DYING) {
+            if (deathAnimation.isAnimationFinished(stateTime)) {
+                enemyState = EnemyState.DEAD;
+                dead = true;
+            }
+
             return;
         }
 
         animationTime += deltaTime;
 
-        if (hitTimer > 0) {
-            hitTimer -= deltaTime;
-        }
+
 
         float dx = direction * patrolDirX * speed * deltaTime;
         float dy = direction * patrolDirY * speed * deltaTime;
@@ -119,17 +161,26 @@ public class Enemy {
     }
 
     public void draw(SpriteBatch batch) {
-        if (dead) {
+        if (enemyState == EnemyState.DEAD) {
             return;
         }
 
-        TextureRegion currentFrame = walkAnimation.getKeyFrame(animationTime, true);
+        TextureRegion currentFrame;
 
-        // Make a copy so flipping does not permanently affect the animation frame.
+        if (enemyState == EnemyState.DYING) {
+            currentFrame = deathAnimation.getKeyFrame(stateTime, false);
+        } else {
+            currentFrame = walkAnimation.getKeyFrame(animationTime, true);
+        }
+
         TextureRegion frameToDraw = new TextureRegion(currentFrame);
 
         if (direction < 0) {
             frameToDraw.flip(true, false);
+        }
+
+        if (hitFlashTimer > 0 && enemyState != EnemyState.DYING) {
+            batch.setColor(1f, 0.35f, 0.35f, 1f);
         }
 
         batch.draw(
@@ -139,6 +190,8 @@ public class Enemy {
             width,
             height
         );
+
+        batch.setColor(1f, 1f, 1f, 1f);
     }
 
     private void setPatrolPattern(String pattern) {
@@ -199,20 +252,26 @@ public class Enemy {
     }
 
     public void takeDamage(int amount) {
-        if (dead || hitTimer > 0) {
+        if (enemyState == EnemyState.DEAD || enemyState == EnemyState.DYING || hitTimer > 0) {
             return;
         }
 
         health -= amount;
         hitTimer = hitCooldown;
+        hitFlashTimer = 0.15f;
 
         if (health <= 0) {
-            dead = true;
+            enemyState = EnemyState.DYING;
+            stateTime = 0f;
         }
     }
 
     public boolean isDead() {
-        return dead;
+        return enemyState == EnemyState.DEAD || enemyState == EnemyState.DYING;
+    }
+
+    public boolean canBeRemoved() {
+        return enemyState == EnemyState.DEAD;
     }
 
     public void dispose() {

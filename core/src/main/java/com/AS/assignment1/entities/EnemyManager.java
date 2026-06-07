@@ -39,7 +39,7 @@ public class EnemyManager {
                 }
             }
 
-            if (enemy.isDead()) {
+            if (enemy.canBeRemoved()) {
                 enemy.dispose();
                 enemies.removeIndex(i);
             }
